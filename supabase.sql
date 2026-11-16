@@ -498,3 +498,25 @@ $$;
 grant execute on function public.mover_cita(text, uuid, time) to anon, authenticated;
 grant execute on function public.agregar_cita(text, date, time, text, uuid) to anon, authenticated;
 grant execute on function public.borrar_cita(text, uuid) to anon, authenticated;
+
+-- ============================================================
+-- REAGENDAR: pasa una cita a otra fecha y hora libre.
+-- Queda como "no confirmado" y sin mensaje enviado, para volver a mandar el WhatsApp.
+-- El link personal del paciente sigue siendo el mismo y ya muestra la nueva fecha.
+-- ============================================================
+create or replace function public.reagendar_cita(p_clave text, p_id uuid, p_fecha date, p_hora time)
+returns jsonb
+language plpgsql volatile security definer set search_path = public
+as $$
+begin
+  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
+  if exists (select 1 from public.citas where fecha = p_fecha and hora = p_hora and id <> p_id) then
+    return jsonb_build_object('ok', true, 'error', 'Esa hora ya está ocupada. Escoja otra.');
+  end if;
+  update public.citas
+     set fecha = p_fecha, hora = p_hora, estado = 'pendiente', aviso_en = null, enviado_en = null
+   where id = p_id;
+  return jsonb_build_object('ok', true);
+end;
+$$;
+grant execute on function public.reagendar_cita(text, uuid, date, time) to anon, authenticated;
