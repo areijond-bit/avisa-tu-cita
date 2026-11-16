@@ -1,11 +1,10 @@
 -- Avisa tu Cita: base de datos para Supabase.
 -- Pegar completo en Supabase → SQL Editor → Run. Se puede correr más de una vez.
 --
--- Qué se guarda: nombre, últimos 4 números del seguro social, fecha, hora y estado.
--- Nada médico y nunca el número de seguro social completo.
+-- Qué se guarda: nombre, fecha, hora y estado de cada cita. Nada médico.
 --
 -- Quién puede hacer qué:
---   * Pacientes (sin cuenta): solo pueden buscar SU cita con nombre + 4 números
+--   * Pacientes (sin cuenta): solo pueden buscar su cita con nombre y apellido
 --     y avisar "en camino" / "no va". No pueden ver la lista de pacientes.
 --   * Personal (doctor y asistente): entran con correo y contraseña y ven/editan todo,
 --     pero solo si su correo está en la tabla "personal" (al final de este archivo).
@@ -15,13 +14,17 @@ create table if not exists public.citas (
   fecha      date not null,
   hora       time not null,
   nombre     text not null,
-  nss4       text not null check (nss4 ~ '^[0-9]{4}$'),
   estado     text not null default 'pendiente' check (estado in ('pendiente', 'camino', 'no_va', 'llego')),
   aviso_en   timestamptz,
-  creado_en  timestamptz not null default now(),
-  unique (fecha, hora, nss4)
+  creado_en  timestamptz not null default now()
 );
 create index if not exists citas_fecha on public.citas (fecha);
+
+-- Versión anterior pedía los 4 números del seguro: ya no se usan
+drop function if exists public.buscar_cita(text, text);
+drop function if exists public.avisar_cita(uuid, text, text);
+alter table public.citas drop column if exists nss4;
+create unique index if not exists citas_fecha_hora on public.citas (fecha, hora);
 
 create table if not exists public.personal (
   email text primary key
@@ -57,8 +60,8 @@ as $$
   select translate(lower(trim(coalesce(t, ''))), 'áéíóúüñ', 'aeiouun');
 $$;
 
--- Paciente: buscar su cita (de hoy en adelante) con nombre + 4 números
-create or replace function public.buscar_cita(p_nombre text, p_nss4 text)
+-- Paciente: buscar su cita (de hoy en adelante). Pide al menos nombre y apellido.
+create or replace function public.buscar_cita(p_nombre text)
 returns table (id uuid, fecha date, hora time, nombre text, estado text)
 language plpgsql stable security definer set search_path = public
 as $$
@@ -66,17 +69,15 @@ declare
   palabras text[];
   hoy date := (now() at time zone 'America/Mexico_City')::date;
 begin
-  if p_nss4 is null or p_nss4 !~ '^[0-9]{4}$' then return; end if;
   palabras := array(
     select w from regexp_split_to_table(public.norm_txt(p_nombre), '\s+') as w where length(w) >= 2
   );
-  if coalesce(array_length(palabras, 1), 0) = 0 then return; end if;
+  if coalesce(array_length(palabras, 1), 0) < 2 then return; end if;
 
   return query
     select c.id, c.fecha, c.hora, c.nombre, c.estado
     from public.citas c
-    where c.nss4 = p_nss4
-      and c.fecha >= hoy
+    where c.fecha >= hoy
       and not exists (
         select 1 from unnest(palabras) as q
         where not exists (
@@ -85,12 +86,12 @@ begin
         )
       )
     order by c.fecha, c.hora
-    limit 5;
+    limit 3;
 end;
 $$;
 
--- Paciente: avisar "camino" o "no_va". Pide otra vez los 4 números.
-create or replace function public.avisar_cita(p_id uuid, p_nss4 text, p_estado text)
+-- Paciente: avisar "camino" o "no_va" sobre la cita que encontró
+create or replace function public.avisar_cita(p_id uuid, p_estado text)
 returns text
 language plpgsql volatile security definer set search_path = public
 as $$
@@ -101,7 +102,6 @@ begin
   update public.citas
      set estado = p_estado, aviso_en = now()
    where id = p_id
-     and nss4 = p_nss4
      and estado <> 'llego'
      and fecha >= (now() at time zone 'America/Mexico_City')::date
   returning estado into nuevo;
@@ -109,10 +109,10 @@ begin
 end;
 $$;
 
-revoke all on function public.buscar_cita(text, text) from public;
-revoke all on function public.avisar_cita(uuid, text, text) from public;
-grant execute on function public.buscar_cita(text, text) to anon, authenticated;
-grant execute on function public.avisar_cita(uuid, text, text) to anon, authenticated;
+revoke all on function public.buscar_cita(text) from public;
+revoke all on function public.avisar_cita(uuid, text) from public;
+grant execute on function public.buscar_cita(text) to anon, authenticated;
+grant execute on function public.avisar_cita(uuid, text) to anon, authenticated;
 
 -- Avisos en vivo para el panel del consultorio
 do $$

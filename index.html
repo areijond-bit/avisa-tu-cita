@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700;800&family=Atkinson+Hyperlegible+Mono:wght@500;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
 <style>
 /* Layout: encabezado blanco con línea azul; una columna angosta para el paciente con una sola acción por pantalla; el consultorio ve una lista por hora. Siempre fondo blanco. */
 :root {
@@ -207,6 +208,30 @@ tr.bad td { color: var(--error); background: #FDECEA; }
 @media (max-width: 600px) { .poster { grid-template-columns: 1fr; padding: 22px; } }
 
 .lock { max-width: 420px; }
+
+/* cargar citas por foto */
+.pick { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.pick .btn-xl { max-width: 460px; cursor: pointer; }
+.ocr { border: 2px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+.prog { height: 12px; background: var(--blue-tint); border-radius: 99px; overflow: hidden; margin-top: 10px; }
+.prog span { display: block; height: 100%; background: var(--blue); transition: width .3s; }
+.notice { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; font-size: 18px; }
+.notice svg.i { width: 24px; height: 24px; margin-top: 2px; }
+.notice.ok { background: var(--blue-tint); color: var(--blue); }
+.notice.warn { background: var(--orange-tint); color: var(--orange-ink); border: 2px solid var(--orange); }
+ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.erow { display: grid; grid-template-columns: 32px 64px minmax(0, 1fr) 44px; gap: 10px; align-items: center; padding: 8px 12px; border-top: 1px solid var(--line); }
+.erow:first-child { border-top: 0; }
+.erow .num { font-family: var(--mono); color: var(--muted); font-weight: 700; text-align: right; }
+.erow .ehr { font-family: var(--mono); color: var(--blue); font-weight: 700; font-size: 16px; }
+.erow.over { background: var(--orange-tint); }
+.erow.over .ehr { color: var(--orange-ink); font-family: var(--font); font-size: 14px; }
+.ein { width: 100%; min-height: 46px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 10px; font-size: 18px; background: var(--white); }
+.ein:focus { border-color: var(--blue); outline: none; }
+.ein.missing { border-color: var(--orange); background: var(--orange-tint); }
+.del { width: 44px; height: 44px; border: 0; background: none; color: var(--muted); font-size: 28px; line-height: 1; border-radius: 10px; }
+.del:hover { background: var(--orange-tint); color: var(--orange-ink); }
+@media (max-width: 600px) { .erow { grid-template-columns: 26px 52px minmax(0, 1fr) 40px; gap: 8px; padding: 8px; } .erow .ehr { font-size: 14px; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -225,7 +250,7 @@ tr.bad td { color: var(--error); background: #FDECEA; }
 
   const REAL = !!(CONFIG.url && CONFIG.key && window.supabase);
   const sb = REAL ? window.supabase.createClient(CONFIG.url, CONFIG.key) : null;
-  const KEY = "avisa-cita-demo-v3";
+  const KEY = "avisa-cita-demo-v4";
   const SLOTS = [];
   for (let m = HORARIO.inicio; m < HORARIO.fin; m += HORARIO.cada) SLOTS.push(String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"));
 
@@ -239,6 +264,7 @@ tr.bad td { color: var(--error); background: #FDECEA; }
     cal: '<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="3" y1="10" x2="21" y2="10"/>',
     clock: '<circle cx="12" cy="12" r="9.5"/><polyline points="12 7 12 12 15.5 14"/>',
     phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
+    camera: '<path d="M22 18.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2h3.5l2-3h5l2 3H20a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
     alert: '<circle cx="12" cy="12" r="9.5"/><line x1="12" y1="7.5" x2="12" y2="12.5"/><line x1="12" y1="16.5" x2="12" y2="16.5"/>'
   };
   const ic = n => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + ICON[n] + '</svg>';
@@ -283,7 +309,7 @@ tr.bad td { color: var(--error); background: #FDECEA; }
     ];
     const manana = [["Teresa Morales Jiménez", "1204"], ["Roberto Díaz Herrera", "8830"], ["Gloria Andrade Serrano", "3426"], ["Ramón Juárez Olvera", "4537"]];
     return hoy.map((r, i) => [t, SLOTS[i], ...r]).concat(manana.map((r, i) => [m, SLOTS[i], r[0], r[1], "pendiente", null]))
-      .map(([fecha, hora, nombre, nss4, estado, avisoEn]) => ({ id: fecha + "|" + hora + "|" + nss4, fecha, hora, nombre, nss4, estado, avisoEn }));
+      .map(([fecha, hora, nombre, nss4, estado, avisoEn]) => ({ id: fecha + "|" + hora, fecha, hora, nombre, estado, avisoEn }));
   }
   let mem = null;
   const dload = () => { try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch (e) {} if (!mem) mem = { citas: sample() }; return mem; };
@@ -291,14 +317,14 @@ tr.bad td { color: var(--error); background: #FDECEA; }
   const pub = c => ({ id: c.id, fecha: c.fecha, hora: c.hora, nombre: c.nombre, estado: c.estado });
 
   const Demo = {
-    async buscar(q, d4) {
+    async buscar(q) {
       const words = norm(q).split(/\s+/).filter(w => w.length >= 2), t = today();
-      return dload().citas.filter(c => c.fecha >= t && c.nss4 === d4 && words.every(w => norm(c.nombre).split(/\s+/).some(n => n.startsWith(w))))
-        .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora)).map(pub);
+      return dload().citas.filter(c => c.fecha >= t && words.every(w => norm(c.nombre).split(/\s+/).some(n => n.startsWith(w))))
+        .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora)).slice(0, 3).map(pub);
     },
-    async avisar(id, d4, estado) {
+    async avisar(id, estado) {
       const db = dload(), c = db.citas.find(x => x.id === id);
-      if (!c || c.nss4 !== d4 || c.estado === "llego") return null;
+      if (!c || c.estado === "llego") return null;
       c.estado = estado; c.avisoEn = new Date().toISOString(); dsave(db); return estado;
     },
     async sesion() { try { return sessionStorage.getItem(KEY + "-pin") === "ok"; } catch (e) { return false; } },
@@ -308,10 +334,10 @@ tr.bad td { color: var(--error); background: #FDECEA; }
     async marcar(id, estado) { const db = dload(), c = db.citas.find(x => x.id === id); if (c) { c.estado = estado; c.avisoEn = new Date().toISOString(); dsave(db); } },
     async guardar(rows) {
       const db = dload(), days = new Set(rows.map(r => r.fecha));
-      const prev = new Map(db.citas.map(c => [c.fecha + "|" + c.hora + "|" + c.nss4, c]));
+      const prev = new Map(db.citas.map(c => [c.fecha + "|" + c.hora + "|" + norm(c.nombre), c]));
       db.citas = db.citas.filter(c => !days.has(c.fecha)).concat(rows.map(r => {
-        const id = r.fecha + "|" + r.hora + "|" + r.nss4, old = prev.get(id);
-        return { id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nss4: r.nss4, estado: old ? old.estado : "pendiente", avisoEn: old ? old.avisoEn : null };
+        const id = r.fecha + "|" + r.hora, old = prev.get(id + "|" + norm(r.nombre));
+        return { id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, estado: old ? old.estado : "pendiente", avisoEn: old ? old.avisoEn : null };
       }));
       dsave(db);
     },
@@ -320,24 +346,24 @@ tr.bad td { color: var(--error); background: #FDECEA; }
   };
 
   // ---------- almacén real (Supabase) ----------
-  const fix = r => ({ id: r.id, fecha: r.fecha, hora: String(r.hora).slice(0, 5), nombre: r.nombre, nss4: r.nss4, estado: r.estado, avisoEn: r.aviso_en || null });
+  const fix = r => ({ id: r.id, fecha: r.fecha, hora: String(r.hora).slice(0, 5), nombre: r.nombre, estado: r.estado, avisoEn: r.aviso_en || null });
   const ok = ({ data, error }) => { if (error) throw error; return data; };
   const Real = {
-    async buscar(q, d4) { return ok(await sb.rpc("buscar_cita", { p_nombre: q, p_nss4: d4 })).map(fix); },
-    async avisar(id, d4, estado) { return ok(await sb.rpc("avisar_cita", { p_id: id, p_nss4: d4, p_estado: estado })); },
+    async buscar(q) { return ok(await sb.rpc("buscar_cita", { p_nombre: q })).map(fix); },
+    async avisar(id, estado) { return ok(await sb.rpc("avisar_cita", { p_id: id, p_estado: estado })); },
     async sesion() { const { data } = await sb.auth.getSession(); return !!data.session; },
     async entrar(email, pass) { const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password: pass }); return !error; },
     async salir() { await sb.auth.signOut(); },
-    async dia(day) { return ok(await sb.from("citas").select("id,fecha,hora,nombre,nss4,estado,aviso_en").eq("fecha", day).order("hora")).map(fix); },
+    async dia(day) { return ok(await sb.from("citas").select("id,fecha,hora,nombre,estado,aviso_en").eq("fecha", day).order("hora")).map(fix); },
     async marcar(id, estado) { ok(await sb.from("citas").update({ estado, aviso_en: new Date().toISOString() }).eq("id", id)); },
     async guardar(rows) {
       const days = [...new Set(rows.map(r => r.fecha))];
-      const old = ok(await sb.from("citas").select("fecha,hora,nss4,estado,aviso_en").in("fecha", days));
-      const prev = new Map(old.map(c => [c.fecha + "|" + String(c.hora).slice(0, 5) + "|" + c.nss4, c]));
+      const old = ok(await sb.from("citas").select("fecha,hora,nombre,estado,aviso_en").in("fecha", days));
+      const prev = new Map(old.map(c => [c.fecha + "|" + String(c.hora).slice(0, 5) + "|" + norm(c.nombre), c]));
       ok(await sb.from("citas").delete().in("fecha", days));
       ok(await sb.from("citas").insert(rows.map(r => {
-        const o = prev.get(r.fecha + "|" + r.hora + "|" + r.nss4);
-        return { fecha: r.fecha, hora: r.hora, nombre: r.nombre, nss4: r.nss4, estado: o ? o.estado : "pendiente", aviso_en: o ? o.aviso_en : null };
+        const o = prev.get(r.fecha + "|" + r.hora + "|" + norm(r.nombre));
+        return { fecha: r.fecha, hora: r.hora, nombre: r.nombre, estado: o ? o.estado : "pendiente", aviso_en: o ? o.aviso_en : null };
       })));
     },
     escuchar(cb) { sb.channel("citas").on("postgres_changes", { event: "*", schema: "public", table: "citas" }, () => cb()).subscribe(); }
@@ -358,7 +384,7 @@ tr.bad td { color: var(--error); background: #FDECEA; }
   const errBox = msg => msg ? '<div class="err" role="alert">' + ic("alert") + '<span>' + msg + '</span></div>' : '';
 
   // ---------- paciente ----------
-  const fresh = () => ({ step: "inicio", q: "", d4: "", found: [], sel: null, err: "" });
+  const fresh = () => ({ step: "inicio", q: "", found: [], sel: null, err: "" });
   let pac = fresh();
 
   function renderPatient() {
@@ -372,12 +398,10 @@ tr.bad td { color: var(--error); background: #FDECEA; }
         '<form class="stack" id="f-search" novalidate>' +
         '<div class="field"><label for="q">Su nombre</label><span class="help">Nombre y apellido, como en su carnet</span>' +
         '<input class="input" id="q" autocomplete="name" autocapitalize="words" value="' + esc(pac.q) + '"></div>' +
-        '<div class="field"><label for="d4">Últimos 4 números de su seguro social</label><span class="help">Los encuentra en su carnet del IMSS</span>' +
-        '<input class="input digits" id="d4" inputmode="numeric" maxlength="4" autocomplete="off" value="' + esc(pac.d4) + '"></div>' +
-        errBox(pac.err) +
+                errBox(pac.err) +
         '<button class="btn-xl btn-blue" type="submit">' + ic("search") + 'Buscar</button>' +
         '<button class="btn-xl btn-plain" type="button" id="back">' + ic("back") + 'Regresar</button>' +
-        (REAL ? '' : '<p class="tip">Prueba: escriba <b>María López</b> y <b>4821</b>.</p>') + '</form>';
+        (REAL ? '' : '<p class="tip">Prueba: escriba <b>María López</b>.</p>') + '</form>';
     } else if (pac.step === "cita") {
       h += '<div class="lead"><span class="step">Paso 2 de 2</span><h1>' + (pac.found.length > 1 ? "Sus citas" : "Su cita") + '</h1></div>' + errBox(pac.err);
       pac.found.forEach(c => {
@@ -418,7 +442,7 @@ tr.bad td { color: var(--error); background: #FDECEA; }
   async function avisar(id, estado) {
     busy();
     try {
-      const r = await store.avisar(id, pac.d4, estado);
+      const r = await store.avisar(id, estado);
       if (!r) { pac.err = "Esta cita ya no se puede cambiar."; pac.step = "cita"; return renderPatient(); }
       pac.found.find(c => c.id === id).estado = r; pac.sel = id; pac.err = ""; pac.step = "listo";
     } catch (e) { pac.err = NET; }
@@ -436,16 +460,14 @@ tr.bad td { color: var(--error); background: #FDECEA; }
     app.querySelectorAll("[data-nova]").forEach(b => b.addEventListener("click", () => { pac.sel = b.dataset.nova; pac.err = ""; pac.step = "confirmar_no"; renderPatient(); }));
     const f = $("f-search");
     if (!f) return;
-    $("d4").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); });
     f.addEventListener("submit", async e => {
       e.preventDefault();
-      pac.q = $("q").value; pac.d4 = $("d4").value;
-      if (!norm(pac.q).split(/\s+/).some(w => w.length >= 2)) { pac.err = "Escriba su nombre."; return renderPatient(); }
-      if (pac.d4.length !== 4) { pac.err = "Escriba los 4 números de su seguro social."; return renderPatient(); }
+      pac.q = $("q").value;
+      if (norm(pac.q).split(/\s+/).filter(w => w.length >= 2).length < 2) { pac.err = "Escriba su nombre y su apellido."; return renderPatient(); }
       busy();
       try {
-        const found = await store.buscar(pac.q, pac.d4);
-        if (!found.length) { pac.err = "No encontramos su cita. Revise su nombre y los 4 números."; return renderPatient(); }
+        const found = await store.buscar(pac.q);
+        if (!found.length) { pac.err = "No encontramos su cita. Revise que su nombre y apellido estén bien escritos."; return renderPatient(); }
         pac.err = ""; pac.found = found; pac.step = "cita";
       } catch (x) { pac.err = NET; }
       renderPatient();
@@ -453,7 +475,7 @@ tr.bad td { color: var(--error); background: #FDECEA; }
   }
 
   // ---------- consultorio ----------
-  let adm = { unlocked: false, tab: "agenda", day: today(), list: null, loadErr: "", pasteText: "", pasteDay: today(), preview: null, msg: "" };
+  let adm = { unlocked: false, tab: "agenda", day: today(), list: null, loadErr: "", pasteText: "", pasteDay: today(), rows: null, ocr: null, showPaste: false, msg: "" };
   const LABEL = { pendiente: "Sin avisar", camino: "En camino", no_va: "No va", llego: "Ya llegó" };
 
   async function loadDay() {
@@ -514,7 +536,7 @@ tr.bad td { color: var(--error); background: #FDECEA; }
         ? '<button class="sbtn ghost" type="button" data-undo="' + esc(c.id) + '">Deshacer</button>'
         : '<button class="sbtn fill" type="button" data-llego="' + esc(c.id) + '">Llegó</button>';
       h += '<div class="row ' + c.estado + (current ? " now" : "") + '"><span class="hr">' + c.hora + '</span>' +
-        '<div style="min-width:0"><div class="name">' + esc(c.nombre) + '</div><div class="meta">NSS ••••' + esc(c.nss4) + '</div></div>' +
+        '<div style="min-width:0"><div class="name">' + esc(c.nombre) + '</div></div>' +
         '<div class="right">' + tag + btn + '</div></div>';
     });
     h += '</div>';
@@ -522,67 +544,103 @@ tr.bad td { color: var(--error); background: #FDECEA; }
     return h;
   }
 
-  function parseAgenda(text, defDay) {
-    const out = [];
-    text.split(/\r?\n/).forEach((raw, i) => {
-      let s = raw.trim();
-      if (!s) return;
-      if (/nombre|paciente|afiliaci/i.test(s) && !/\d{4}/.test(s)) return; // encabezado
-      let fecha = defDay, hora = null, nss = null, err = [];
-      let m = s.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
-      if (m) { fecha = m[1] + "-" + pad(+m[2]) + "-" + pad(+m[3]); s = s.replace(m[0], " "); }
-      else if ((m = s.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/))) {
-        const y = m[3].length === 2 ? "20" + m[3] : m[3];
-        fecha = y + "-" + pad(+m[2]) + "-" + pad(+m[1]); s = s.replace(m[0], " ");
-      }
-      if ((m = s.match(/\b(\d{1,2}):(\d{2})\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/i))) {
-        let h = +m[1]; const ap = (m[3] || "").toLowerCase().replace(/[\s.]/g, "");
-        if (ap === "pm" && h < 12) h += 12; if (ap === "am" && h === 12) h = 0;
-        hora = pad(h) + ":" + m[2]; s = s.replace(m[0], " ");
-      }
-      if ((m = s.match(/\d[\d\s-]{8,16}\d/))) {
-        const d = m[0].replace(/\D/g, "");
-        if (d.length >= 10 && d.length <= 11) { nss = d; s = s.replace(m[0], " "); }
-      }
-      const nombre = s.replace(/[\t,;|]+/g, " ").replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ' ]/g, " ").replace(/\s+/g, " ").trim()
-        .toLowerCase().replace(/(^|\s)(\S)/g, (a, b, c) => b + c.toUpperCase());
-      if (!hora) err.push("falta la hora");
-      if (!nombre) err.push("falta el nombre");
-      if (!nss) err.push("falta el NSS");
-      if (isNaN(fromYmd(fecha).getTime())) err.push("fecha inválida");
-      out.push({ linea: i + 1, fecha, hora, nombre, nss4: nss ? nss.slice(-4) : null, err });
-    });
-    // Si la lista no trae horas, se reparten solas en el horario, en el orden pegado
-    if (out.length && !out.some(r => r.hora)) {
-      out.forEach((r, i) => {
-        r.err = r.err.filter(e => e !== "falta la hora");
-        r.hora = SLOTS[i] || null;
-        if (!r.hora) r.err.push("ya no cabe en el horario (máximo " + SLOTS.length + ")");
-      });
-    }
-    return out;
-  }
-
-  const SAMPLE_PASTE = "Nombre\tNSS\nPEREZ GARCIA JUAN CARLOS\t12345678901\nRUIZ SOTO ANA LAURA\t98765432105\nVEGA LUNA PEDRO\t4567-89-0123-4\nCRUZ MORA ELENA\t31826704419\nLARA NUÑEZ OSCAR\t77896102583";
+  const SAMPLE_PASTE = "Nombre\nPEREZ GARCIA JUAN CARLOS\nRUIZ SOTO ANA LAURA\nVEGA LUNA PEDRO\nCRUZ MORA ELENA\nLARA NUÑEZ OSCAR";
 
   function pasteHTML() {
-    let h = '<section class="stack paste"><div class="bar"><div><h2>Cargar citas</h2><span class="sub">Copie la lista del sistema del IMSS o de Excel y péguela aquí.</span></div></div>' +
-      '<p class="help">Cada renglón necesita <b>nombre</b> y <b>número de seguro social</b> (solo se guardan los últimos 4 números). Si la lista no trae horas, se reparten solas de <b>8:00 a 2:00</b>, una consulta cada 15 minutos (hasta ' + SLOTS.length + ' pacientes), en el orden de la lista. Si vuelve a cargar un día, la lista nueva reemplaza a la anterior.</p>' +
-      '<div class="row-btns"><label for="pday" style="font-weight:700;font-size:17px">Fecha de las citas</label><input class="date-in" type="date" id="pday" value="' + adm.pasteDay + '">' +
-      '<button class="mbtn line" type="button" id="fill-sample">Usar lista de ejemplo</button></div>' +
-      '<textarea id="ptext" spellcheck="false" aria-label="Lista de citas" placeholder="PEREZ GARCIA JUAN    12345678901">' + esc(adm.pasteText) + '</textarea>' +
-      '<div class="row-btns"><button class="mbtn" type="button" id="do-preview">Revisar lista</button></div>';
-    if (adm.preview) {
-      const good = adm.preview.filter(r => !r.err.length);
-      const bad = adm.preview.length - good.length;
-      h += '<p style="font-weight:700">' + good.length + ' citas listas' + (bad ? ' · <span style="color:var(--error)">' + bad + ' con problemas (no se guardarán)</span>' : '') + '</p>' +
-        '<div class="tbl"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>NSS</th><th>Revisión</th></tr></thead><tbody>' +
-        adm.preview.map(r => '<tr class="' + (r.err.length ? "bad" : "") + '"><td class="mono">' + esc(r.fecha) + '</td><td class="mono">' + esc(r.hora || "—") + '</td><td>' + esc(r.nombre || "—") + '</td><td class="mono">' + (r.nss4 ? "••••" + esc(r.nss4) : "—") + '</td><td>' + (r.err.length ? "Renglón " + r.linea + ": " + r.err.join(", ") : "Correcto") + '</td></tr>').join("") +
-        '</tbody></table></div>' +
-        '<div class="row-btns"><button class="mbtn orange" type="button" id="do-save"' + (good.length ? "" : " disabled") + '>Guardar ' + good.length + ' citas</button></div>';
+    let h = '<section class="stack paste"><div class="bar"><div><h2>Cargar citas</h2><span class="sub">Tome una foto de la lista y revise los nombres.</span></div></div>' +
+      '<div class="row-btns"><label for="pday" style="font-weight:700;font-size:17px">Fecha de las citas</label><input class="date-in" type="date" id="pday" value="' + adm.pasteDay + '"></div>';
+    if (adm.ocr !== null) {
+      h += '<div class="ocr"><b>Leyendo la lista…</b> <span class="sub">Puede tardar unos segundos.</span><div class="prog"><span style="width:' + Math.round(adm.ocr * 100) + '%"></span></div></div>';
+    } else {
+      h += '<div class="pick"><label class="btn-xl btn-blue photo" for="foto">' + ic("camera") + (adm.rows ? 'Tomar otra foto' : 'Tomar foto de la lista') + '</label>' +
+        '<input id="foto" type="file" accept="image/*" hidden>' +
+        '<button class="link" type="button" id="toggle-paste">' + (adm.showPaste ? 'Ocultar texto' : 'O pegar la lista escrita') + '</button></div>';
+      if (adm.showPaste) {
+        h += '<textarea id="ptext" spellcheck="false" aria-label="Lista de pacientes" placeholder="PEREZ GARCIA JUAN">' + esc(adm.pasteText) + '</textarea>' +
+          '<div class="row-btns"><button class="mbtn" type="button" id="do-preview">Leer lista</button><button class="mbtn line" type="button" id="fill-sample">Usar lista de ejemplo</button></div>';
+      }
     }
     h += errBox(adm.msg);
+    if (adm.rows) {
+      h += '<div id="count" aria-live="polite">' + countHTML() + '</div>' +
+        '<p class="help">Toque un nombre para corregirlo. La hora se pone sola según el orden.</p>' +
+        '<ol class="edit">' + adm.rows.map(rowEdit).join("") + '</ol>' +
+        '<div class="row-btns"><button class="mbtn line" type="button" id="add-row">+ Agregar paciente</button>' +
+        '<button class="mbtn orange" type="button" id="do-save">Guardar citas</button></div>';
+    }
     return h + '</section>';
+  }
+
+  const rowOk = (r, i) => r.nombre.trim().length > 1 && i < SLOTS.length;
+  function rowEdit(r, i) {
+    const over = i >= SLOTS.length;
+    return '<li class="erow' + (rowOk(r, i) ? '' : ' bad') + (over ? ' over' : '') + '" data-row="' + i + '">' +
+      '<span class="num">' + (i + 1) + '</span><span class="ehr">' + (over ? 'sin hora' : SLOTS[i]) + '</span>' +
+      '<input class="ein nm' + (r.nombre.trim() ? '' : ' missing') + '" data-i="' + i + '" value="' + esc(r.nombre) + '" aria-label="Nombre del paciente ' + (i + 1) + '" placeholder="Nombre y apellido">' +
+      '<button class="del" type="button" data-del="' + i + '" aria-label="Quitar paciente ' + (i + 1) + '">×</button></li>';
+  }
+  function countHTML() {
+    const n = adm.rows.length, max = SLOTS.length;
+    const sinNombre = adm.rows.filter(r => r.nombre.trim().length < 2).length;
+    const msgs = [];
+    if (n > max) msgs.push('Hay <b>' + n + '</b> nombres y solo caben <b>' + max + '</b>. Quite ' + (n - max) + '.');
+    else if (n < max) msgs.push('Hay <b>' + n + '</b> nombres. Faltan <b>' + (max - n) + '</b> para llenar los ' + max + ' lugares.');
+    if (sinNombre) msgs.push(sinNombre + (sinNombre === 1 ? ' renglón está vacío.' : ' renglones están vacíos.'));
+    if (!msgs.length) return '<div class="notice ok">' + ic("check") + '<span><b>' + n + ' pacientes</b> · lista completa, de 8:00 a 1:45.</span></div>';
+    return '<div class="notice warn" role="alert">' + ic("alert") + '<span>' + msgs.join('<br>') + '</span></div>';
+  }
+
+  // Foto → texto, en el mismo celular (Tesseract)
+  function prepImage(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, 2200 / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+        const g = c.getContext("2d");
+        g.filter = "grayscale(1) contrast(1.4)";
+        g.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(img.src);
+        resolve(c);
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+  // Un renglón = un paciente. Se quitan números, horas y símbolos; se queda el nombre.
+  function rowsFromText(text) {
+    return text.split(/\r?\n/).map(l => l
+        .replace(/\b\d{1,2}:\d{2}\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/gi, " ")
+        .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ' ]/g, " ")
+        .replace(/\s+/g, " ").trim())
+      .filter(l => l.split(" ").filter(w => w.length > 1).length >= 2 && l.length >= 5 && !/^(nombre|paciente|hora|fecha|lista|consultorio)\b/i.test(l))
+      .map(l => ({ nombre: l.toLowerCase().replace(/(^|\s)(\S)/g, (a, b, c) => b + c.toUpperCase()) }));
+  }
+  async function leerFoto(file) {
+    if (!window.Tesseract) { adm.msg = "No se pudo cargar el lector de fotos. Revise el internet."; return renderAdmin(); }
+    adm.ocr = 0.02; adm.msg = ""; renderAdmin();
+    try {
+      const img = await prepImage(file);
+      const worker = await Tesseract.createWorker("spa", 1, {
+        logger: m => { if (m.status === "recognizing text") { adm.ocr = Math.max(0.05, m.progress); const s = app.querySelector(".prog span"); if (s) s.style.width = Math.round(adm.ocr * 100) + "%"; } }
+      });
+      const { data } = await worker.recognize(img);
+      await worker.terminate();
+      const rows = rowsFromText(data.text);
+      if (rows.length) { adm.rows = rows; aviso(); }
+      else adm.msg = "No se pudo leer ningún nombre. Tome la foto de frente, con buena luz, y que la lista llene toda la foto.";
+    } catch (e) { adm.msg = "No se pudo leer la foto. Intente de nuevo."; }
+    adm.ocr = null; renderAdmin();
+  }
+  // Si no son exactamente 24, el celular vibra para avisar
+  function aviso() { if (adm.rows.length !== SLOTS.length && navigator.vibrate) navigator.vibrate([200, 100, 200]); }
+
+  function refreshRow(i) {
+    const li = app.querySelector('[data-row="' + i + '"]'); if (!li) return;
+    li.classList.toggle("bad", !rowOk(adm.rows[i], i));
+    li.querySelector(".nm").classList.toggle("missing", !adm.rows[i].nombre.trim());
+    $("count").innerHTML = countHTML();
   }
 
   function qrHTML() {
@@ -602,19 +660,34 @@ tr.bad td { color: var(--error); background: #FDECEA; }
     app.querySelectorAll("[data-llego]").forEach(b => b.addEventListener("click", async () => { busy(); try { await store.marcar(b.dataset.llego, "llego"); } catch (e) {} loadDay(); }));
     app.querySelectorAll("[data-undo]").forEach(b => b.addEventListener("click", async () => { busy(); try { await store.marcar(b.dataset.undo, "pendiente"); } catch (e) {} loadDay(); }));
     on("reset", async () => { await Demo.reiniciar(); adm.day = today(); loadDay(); });
-    const pt = $("ptext");
-    if (pt) pt.addEventListener("input", () => { adm.pasteText = pt.value; });
     const pd = $("pday");
     if (pd) pd.addEventListener("change", () => { adm.pasteDay = pd.value || today(); });
-    on("fill-sample", () => { adm.pasteText = SAMPLE_PASTE; adm.preview = null; adm.msg = ""; renderAdmin(); });
-    on("do-preview", () => { adm.msg = ""; adm.preview = parseAgenda(adm.pasteText, adm.pasteDay); renderAdmin(); });
+    const foto = $("foto");
+    if (foto) foto.addEventListener("change", () => { const f = foto.files && foto.files[0]; if (f) leerFoto(f); });
+    on("toggle-paste", () => { adm.showPaste = !adm.showPaste; renderAdmin(); });
+    const pt = $("ptext");
+    if (pt) pt.addEventListener("input", () => { adm.pasteText = pt.value; });
+    on("fill-sample", () => { adm.pasteText = SAMPLE_PASTE; adm.msg = ""; renderAdmin(); });
+    on("do-preview", () => {
+      const rows = rowsFromText(adm.pasteText);
+      if (rows.length) { adm.rows = rows; adm.msg = ""; aviso(); } else adm.msg = "No se encontró ningún nombre en el texto.";
+      renderAdmin();
+    });
+    app.querySelectorAll(".ein").forEach(inp => inp.addEventListener("input", () => { const i = +inp.dataset.i; adm.rows[i].nombre = inp.value; refreshRow(i); }));
+    app.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => { adm.rows.splice(+b.dataset.del, 1); renderAdmin(); }));
+    on("add-row", () => {
+      adm.rows.push({ nombre: "" }); renderAdmin();
+      const all = app.querySelectorAll(".ein.nm"); if (all.length) all[all.length - 1].focus();
+    });
     on("do-save", async () => {
-      const good = adm.preview.filter(r => !r.err.length);
+      const rows = adm.rows.filter(r => r.nombre.trim());
+      if (rows.length > SLOTS.length) { adm.msg = "Hay más de " + SLOTS.length + " pacientes. Quite los que sobran antes de guardar."; return renderAdmin(); }
+      if (!rows.length) { adm.msg = "La lista está vacía."; return renderAdmin(); }
       busy();
       try {
-        await store.guardar(good);
-        adm.day = [...new Set(good.map(r => r.fecha))].sort()[0] || adm.day;
-        adm.preview = null; adm.pasteText = ""; adm.tab = "agenda"; adm.list = null; adm.msg = "";
+        await store.guardar(rows.map((r, i) => ({ fecha: adm.pasteDay, hora: SLOTS[i], nombre: r.nombre.trim().replace(/\s+/g, " ") })));
+        adm.day = adm.pasteDay; adm.rows = null; adm.pasteText = ""; adm.showPaste = false;
+        adm.tab = "agenda"; adm.list = null; adm.msg = "";
         renderAdmin(); loadDay();
       } catch (e) { adm.msg = "No se pudieron guardar las citas. Revise el internet e intente de nuevo."; renderAdmin(); }
     });
