@@ -373,3 +373,10 @@ ol.edit { list-style: none; margin: 0; padding: 0; background: var(--white); bor
   .prow { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* foto de la lista junto a los nombres, para comparar */
+.foto-ref { margin: 0; display: flex; gap: 14px; align-items: flex-start; padding: 12px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); }
+.foto-ref img { width: 160px; max-height: 220px; object-fit: contain; border-radius: 8px; background: var(--bg-soft); cursor: zoom-in; }
+.foto-ref.grande img { width: min(100%, 640px); max-height: none; cursor: zoom-out; }
+.foto-ref figcaption { font-size: 14px; color: var(--ink-500); }
+.foto-ref.grande { flex-direction: column; }

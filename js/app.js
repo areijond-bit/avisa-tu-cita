@@ -439,6 +439,7 @@
     if (adm.rows) {
       h += '<div id="count" aria-live="polite">' + countHTML() + '</div>' +
         '<p class="help">Toque un nombre para corregirlo y la hora para cambiarla. Si la foto juntó dos nombres, use <b>Separar</b>.</p>' +
+        (adm.foto ? '<figure class="foto-ref" id="foto-ref"><img src="' + adm.foto + '" alt="Foto de la lista" title="Clic para agrandar"><figcaption>Compare los nombres con la foto y corrija lo que haga falta. Clic en la foto para agrandarla.</figcaption></figure>' : '') +
         '<ol class="edit">' + rowsHTML() + '</ol>' +
         '<div class="row-btns"><button class="mbtn line" type="button" id="add-row">+ Agregar paciente</button>' +
         '<button class="mbtn orange" type="button" id="do-save">Guardar citas</button></div>' +
@@ -499,17 +500,41 @@
   function primeraLibre() { const usadas = new Set(adm.rows.map(r => r.hora)); return SLOTS.find(s => !usadas.has(s)) || ""; }
 
   // Foto → texto, en el mismo celular (Tesseract)
+  // Prepara la foto para leerla: tamaño cómodo, gris y blanco y negro con umbral local
+  // (Bradley), que aguanta sombras y luz dispareja de una hoja fotografiada con el celular.
   function prepImage(file) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        const scale = Math.min(1, 2200 / Math.max(img.width, img.height));
+        const scale = Math.min(2, 2000 / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
         const c = document.createElement("canvas");
-        c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
-        const g = c.getContext("2d");
-        g.filter = "grayscale(1) contrast(1.4)";
-        g.drawImage(img, 0, 0, c.width, c.height);
+        c.width = w; c.height = h;
+        const g = c.getContext("2d", { willReadFrequently: true });
+        g.drawImage(img, 0, 0, w, h);
         URL.revokeObjectURL(img.src);
+        const px = g.getImageData(0, 0, w, h), d = px.data;
+        const gris = new Uint8Array(w * h), suma = new Float64Array((w + 1) * (h + 1));
+        for (let y = 0; y < h; y++) {
+          let fila = 0;
+          for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4, v = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000;
+            gris[y * w + x] = v; fila += v;
+            suma[(y + 1) * (w + 1) + x + 1] = suma[y * (w + 1) + x + 1] + fila;
+          }
+        }
+        const r = Math.max(8, Math.round(Math.max(w, h) / 40)), t = 0.15;
+        for (let y = 0; y < h; y++) {
+          const y0 = Math.max(0, y - r), y1 = Math.min(h - 1, y + r);
+          for (let x = 0; x < w; x++) {
+            const x0 = Math.max(0, x - r), x1 = Math.min(w - 1, x + r);
+            const n = (x1 - x0 + 1) * (y1 - y0 + 1);
+            const area = suma[(y1 + 1) * (w + 1) + x1 + 1] - suma[y0 * (w + 1) + x1 + 1] - suma[(y1 + 1) * (w + 1) + x0] + suma[y0 * (w + 1) + x0];
+            const v = gris[y * w + x] * n <= area * (1 - t) ? 0 : 255, i = (y * w + x) * 4;
+            d[i] = d[i + 1] = d[i + 2] = v;
+          }
+        }
+        g.putImageData(px, 0, 0);
         resolve(c);
       };
       img.onerror = reject;
@@ -525,9 +550,10 @@
         .replace(/^\s*(\d{1,3}\s*[.)\-:]?|[•·*\-–])\s*/, " ")                 // numeración y viñetas
         .replace(/\b\d{1,2}:\d{2}\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/gi, " ")     // horas
         .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ' ]/g, " ")
+        .replace(foto ? /(^| )[^ ](?= |$)/g : /(?!)/, " ")                 // letras sueltas que deja la foto
         .replace(/\s+/g, " ").trim())
       .filter(l => l.length >= 2 &&
-        (!foto || (l.split(" ").filter(w => w.length > 1).length >= 2 && l.length >= 5)) &&
+        (!foto || l.replace(/ /g, "").length >= 3) &&
         !/\b(nombre del paciente|nombres?|pacientes?|hora|fecha|lista|consultorio|folio|afiliaci\w*)$/i.test(l) &&
         (!foto || !/\b(nombre|paciente|hora|fecha|lista|consultorio|folio|afiliaci)/i.test(l)))
       .map(l => ({ nombre: titleCase(l), hora: "", pid: undefined }));
@@ -538,19 +564,28 @@
     nuevas.forEach(r => { r.hora = primeraLibre(); adm.rows.push(r); });
     aviso();
   }
+  const LETRAS = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZabcdefghijklmnñopqrstuvwxyzÁÉÍÓÚÜáéíóúü0123456789 .,)-'";
   async function leerFoto(file) {
     if (!window.Tesseract) { adm.msg = "No se pudo cargar el lector de fotos. Revise el internet."; return renderAdmin(); }
+    if (adm.foto) URL.revokeObjectURL(adm.foto);
+    adm.foto = URL.createObjectURL(file);
     adm.ocr = 0.02; adm.msg = ""; renderAdmin();
     try {
       const img = await prepImage(file);
       const worker = await Tesseract.createWorker("spa", 1, {
         logger: m => { if (m.status === "recognizing text") { adm.ocr = Math.max(0.05, m.progress); const s = app.querySelector(".prog span"); if (s) s.style.width = Math.round(adm.ocr * 100) + "%"; } }
       });
+      // Un bloque de texto parejo, y solo letras, números de lista y signos comunes
+      await worker.setParameters({ tessedit_pageseg_mode: "6", tessedit_char_whitelist: LETRAS, preserve_interword_spaces: "1" });
       const { data } = await worker.recognize(img);
       await worker.terminate();
-      const rows = rowsFromText(data.text, true);
+      // Se descartan los renglones que se leyeron con poca seguridad
+      const texto = Array.isArray(data.lines) && data.lines.length
+        ? data.lines.filter(l => l.confidence >= 50).map(l => l.text).join("\n")
+        : data.text;
+      const rows = rowsFromText(texto, true);
       if (rows.length) agregarFilas(rows);
-      else adm.msg = "No se pudo leer ningún nombre. Tome la foto de frente, con buena luz, y que la lista llene toda la foto.";
+      else adm.msg = "No se pudo leer ningún nombre. Tome la foto de frente, con buena luz y que la hoja llene la foto. Con letra a mano funciona mejor si los nombres van en letra de molde, uno por renglón.";
     } catch (e) { adm.msg = "No se pudo leer la foto. Intente de nuevo."; }
     adm.ocr = null; renderAdmin();
   }
@@ -874,6 +909,8 @@
       renderAdmin();
     });
     if (app.querySelector("ol.edit")) wireRows();
+    const fr = $("foto-ref");
+    if (fr) fr.addEventListener("click", () => fr.classList.toggle("grande"));
     on("add-row", () => {
       adm.rows.push({ nombre: "", hora: primeraLibre(), pid: undefined }); redrawRows();
       const all = app.querySelectorAll(".ein.nm"); if (all.length) all[all.length - 1].focus();
@@ -892,6 +929,7 @@
         }) });
         adm.flash = (res.citas === 1 ? "Se guardó 1 cita." : "Se guardaron " + res.citas + " citas.") +
           (res.nuevos ? " " + res.nuevos + (res.nuevos === 1 ? " paciente nuevo se agregó" : " pacientes nuevos se agregaron") + " a Pacientes." : "");
+        if (adm.foto) { URL.revokeObjectURL(adm.foto); adm.foto = null; }
         adm.day = adm.pasteDay; adm.rows = null; adm.pasteText = ""; adm.showPaste = false; adm.pacientes = null;
         adm.tab = "agenda"; adm.list = null; adm.msg = "";
         renderAdmin(); loadDay();
