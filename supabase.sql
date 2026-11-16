@@ -423,3 +423,78 @@ grant execute on function public.marcar_enviado(text, uuid) to anon, authenticat
 grant execute on function public.pacientes_lista(text) to anon, authenticated;
 grant execute on function public.paciente_guardar(text, uuid, text, text, uuid) to anon, authenticated;
 grant execute on function public.paciente_borrar(text, uuid) to anon, authenticated;
+
+-- ============================================================
+-- AGENDA: mover (arrastrar), agregar en un lugar libre y quitar citas
+-- ============================================================
+
+-- Mueve una cita a otra hora del mismo día. Si esa hora ya tiene paciente, se intercambian.
+create or replace function public.mover_cita(p_clave text, p_id uuid, p_hora time)
+returns jsonb
+language plpgsql volatile security definer set search_path = public
+as $$
+declare
+  f date;
+  h_antes time;
+  otro uuid;
+begin
+  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
+  select fecha, hora into f, h_antes from public.citas where id = p_id;
+  if f is null or h_antes = p_hora then return jsonb_build_object('ok', true); end if;
+  select id into otro from public.citas where fecha = f and hora = p_hora;
+  if otro is not null then
+    update public.citas set hora = '23:59:59' where id = otro;   -- lugar temporal para poder intercambiar
+  end if;
+  update public.citas set hora = p_hora where id = p_id;
+  if otro is not null then
+    update public.citas set hora = h_antes where id = otro;
+  end if;
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+-- Agrega un paciente en una hora libre. Lo liga con su ficha o lo da de alta.
+create or replace function public.agregar_cita(p_clave text, p_fecha date, p_hora time, p_nombre text, p_paciente uuid default null)
+returns jsonb
+language plpgsql volatile security definer set search_path = public
+as $$
+declare
+  nm text := trim(coalesce(p_nombre, ''));
+  pid uuid := p_paciente;
+  n int;
+  nuevo boolean := false;
+begin
+  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
+  if length(nm) < 2 and pid is null then return jsonb_build_object('ok', true, 'error', 'Escriba el nombre del paciente.'); end if;
+  if exists (select 1 from public.citas where fecha = p_fecha and hora = p_hora) then
+    return jsonb_build_object('ok', true, 'error', 'Esa hora ya tiene paciente.');
+  end if;
+  if pid is null then
+    select count(*) into n from public.pacientes p where public.norm_txt(p.nombre) = public.norm_txt(nm);
+    if n = 1 then select p.id into pid from public.pacientes p where public.norm_txt(p.nombre) = public.norm_txt(nm); end if;
+  end if;
+  if pid is null then
+    insert into public.pacientes (nombre, num) values (nm, public.siguiente_num(nm)) returning id into pid;
+    nuevo := true;
+  end if;
+  insert into public.citas (fecha, hora, nombre, paciente_id)
+  select p_fecha, p_hora, p.nombre, p.id from public.pacientes p where p.id = pid;
+  return jsonb_build_object('ok', true, 'nuevo', nuevo);
+end;
+$$;
+
+-- Quita una cita de la agenda (el paciente se queda en Pacientes)
+create or replace function public.borrar_cita(p_clave text, p_id uuid)
+returns jsonb
+language plpgsql volatile security definer set search_path = public
+as $$
+begin
+  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
+  delete from public.citas where id = p_id;
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+grant execute on function public.mover_cita(text, uuid, time) to anon, authenticated;
+grant execute on function public.agregar_cita(text, date, time, text, uuid) to anon, authenticated;
+grant execute on function public.borrar_cita(text, uuid) to anon, authenticated;
