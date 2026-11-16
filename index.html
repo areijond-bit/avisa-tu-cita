@@ -857,7 +857,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
           const pid = autoPid(r);
           return { fecha: adm.pasteDay, hora: r.hora, nombre: r.nombre.trim().replace(/\s+/g, " "), paciente_id: pid && pid !== "nuevo" ? pid : null, nuevo: pid === "nuevo" };
         }) });
-        adm.flash = "Se guardaron " + res.citas + (res.citas === 1 ? " cita." : " citas.") +
+        adm.flash = (res.citas === 1 ? "Se guardó 1 cita." : "Se guardaron " + res.citas + " citas.") +
           (res.nuevos ? " " + res.nuevos + (res.nuevos === 1 ? " paciente nuevo se agregó" : " pacientes nuevos se agregaron") + " a Pacientes." : "");
         adm.day = adm.pasteDay; adm.rows = null; adm.pasteText = ""; adm.showPaste = false; adm.pacientes = null;
         adm.tab = "agenda"; adm.list = null; adm.msg = "";
