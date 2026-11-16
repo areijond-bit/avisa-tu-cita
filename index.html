@@ -278,8 +278,12 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 .sbtn.wa { padding: 7px 10px; }
 .sbtn.wa svg.i, .mbtn.wa svg.i { width: 18px; height: 18px; }
 .sendbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
-.send { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; border: 2px solid #1F8A4C; border-radius: 14px; padding: 14px 18px; background: #EAF6EF; }
-.send > div:first-child { display: flex; flex-direction: column; }
+.send { position: sticky; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 25; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; border: 2px solid #1F8A4C; border-radius: 16px; padding: 14px 18px; background: #EAF6EF; box-shadow: 0 10px 30px rgba(15, 27, 45, .18); }
+.send-info { display: flex; flex-direction: column; min-width: 0; flex: 1 1 220px; }
+.send-prog { height: 8px; background: #CFE9D9; border-radius: 99px; overflow: hidden; margin-top: 8px; max-width: 320px; }
+.send-prog span { display: block; height: 100%; background: #1F8A4C; transition: width .3s; }
+.send-btns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.mbtn.wa.big { font-size: 20px; padding: 14px 26px; }
 .send b { font-size: 20px; }
 .telform { display: flex; flex-direction: column; gap: 8px; padding: 14px 18px; background: var(--soft); border-top: 1px solid var(--line); }
 .telform label { font-weight: 700; }
@@ -640,7 +644,12 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   // ---------- Agenda + WhatsApp ----------
   const mensaje = c => "Hola, " + c.nombre + ". Le recordamos su cita con el " + CLINIC.doctor + " (" + CLINIC.consultorio + ") el " +
     longDay(c.fecha).toLowerCase() + " a las " + ampm(c.hora) + ".\n\n¿Va a venir? Toque aquí para confirmar o cancelar:\n" + SITE_URL + "?c=" + c.token;
-  const waLink = c => "https://wa.me/" + telWa(c.telefono) + "?text=" + encodeURIComponent(mensaje(c));
+  // En celular abre la app de WhatsApp; en computadora, WhatsApp Web siempre en la misma pestaña
+  const esCelular = window.matchMedia("(pointer: coarse)").matches;
+  const waLink = c => esCelular
+    ? "https://wa.me/" + telWa(c.telefono) + "?text=" + encodeURIComponent(mensaje(c))
+    : "https://web.whatsapp.com/send?phone=" + telWa(c.telefono) + "&text=" + encodeURIComponent(mensaje(c));
+  const WA_TAB = "avisa-whatsapp";
   const porEnviar = () => (adm.list || []).filter(c => c.telefono && c.estado === "pendiente" && !c.enviado_en);
 
   function agendaHTML() {
@@ -660,9 +669,11 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     if (adm.envio) {
       const q = adm.envio, c = list.find(x => x.id === q.ids[q.i]);
       if (c) {
-        h += '<div class="send"><div><span class="sub">Mensaje ' + (q.i + 1) + ' de ' + q.ids.length + '</span><b>' + esc(c.nombre) + numTag(c) + '</b><span class="sub">' + telShow(c.telefono) + ' · ' + c.hora + '</span></div>' +
-          '<div class="row-btns"><a class="mbtn wa" id="wa-go" href="' + esc(waLink(c)) + '" target="_blank" rel="noopener">' + ic("chat") + 'Abrir WhatsApp</a>' +
-          '<button class="mbtn line" type="button" id="wa-skip">Saltar</button><button class="link" type="button" id="wa-stop">Terminar</button></div></div>';
+        h += '<div class="send"><div class="send-info"><span class="sub">Mensaje ' + (q.i + 1) + ' de ' + q.ids.length + '</span><b>' + esc(c.nombre) + numTag(c) + '</b><span class="sub">' + telShow(c.telefono) + ' · ' + c.hora + '</span>' +
+          '<div class="send-prog" aria-hidden="true"><span style="width:' + Math.round(q.i / q.ids.length * 100) + '%"></span></div></div>' +
+          '<div class="send-btns"><a class="mbtn wa big" id="wa-go" href="' + esc(waLink(c)) + '" target="' + WA_TAB + '" rel="noopener">' + ic("chat") + 'Abrir WhatsApp</a>' +
+          '<button class="mbtn line" type="button" id="wa-skip">Saltar</button><button class="link" type="button" id="wa-stop">Terminar</button></div></div>' +
+          '<p class="help">Toque <b>Abrir WhatsApp</b>, dé enviar y regrese a esta pestaña: el siguiente paciente ya estará listo en el mismo botón.</p>';
       } else adm.envio = null;
     }
     if (!adm.envio) {
@@ -696,7 +707,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     const tel = c.telefono
       ? '<button class="telbtn" type="button" data-tel="' + c.id + '">' + ic("phone") + telShow(c.telefono) + '</button>' + (c.enviado_en ? ' <span class="sent">' + ic("check") + 'enviado</span>' : '')
       : '<button class="telbtn add" type="button" data-tel="' + c.id + '">+ Agregar teléfono</button>';
-    const wa = c.telefono ? '<a class="sbtn wa" href="' + esc(waLink(c)) + '" target="_blank" rel="noopener" data-wa="' + c.id + '" aria-label="WhatsApp a ' + esc(c.nombre) + '">' + ic("chat") + '</a>' : '';
+    const wa = c.telefono ? '<a class="sbtn wa" href="' + esc(waLink(c)) + '" target="' + WA_TAB + '" rel="noopener" data-wa="' + c.id + '" aria-label="WhatsApp a ' + esc(c.nombre) + '">' + ic("chat") + '</a>' : '';
     let h = '<div class="ccard ' + c.estado + '" data-cid="' + c.id + '">' +
       '<button class="grip" type="button" data-grip="' + c.id + '" aria-label="Arrastrar a ' + esc(c.nombre) + ' a otra hora">⠿</button>' +
       '<div class="cmain"><div class="name">' + esc(c.nombre) + numTag(c) + '</div><div class="meta">' + tel + '</div></div>' +
@@ -1219,11 +1230,16 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     });
     const marcarEnviado = id => { const c = adm.list.find(x => x.id === id); if (c) c.enviado_en = new Date().toISOString(); staff("marcar_enviado", { p_id: id }).catch(() => {}); };
     app.querySelectorAll("[data-wa]").forEach(a => a.addEventListener("click", () => { marcarEnviado(a.dataset.wa); setTimeout(renderAdmin, 300); }));
-    on("wa-all", () => { adm.envio = { ids: porEnviar().map(c => c.id), i: 0 }; renderAdmin(); });
+    on("wa-all", () => { adm.envio = { ids: porEnviar().map(c => c.id), i: 0, enviados: 0 }; adm.flash = ""; renderAdmin(); });
+    const siguiente = () => {
+      const q = adm.envio; q.i++;
+      if (q.i >= q.ids.length) { adm.flash = "Listo: se enviaron " + q.enviados + (q.enviados === 1 ? " mensaje." : " mensajes."); adm.envio = null; }
+      renderAdmin();
+    };
     const go = $("wa-go");
-    if (go) go.addEventListener("click", () => { marcarEnviado(adm.envio.ids[adm.envio.i]); setTimeout(() => { adm.envio.i++; if (adm.envio.i >= adm.envio.ids.length) adm.envio = null; renderAdmin(); }, 400); });
-    on("wa-skip", () => { adm.envio.i++; if (adm.envio.i >= adm.envio.ids.length) adm.envio = null; renderAdmin(); });
-    on("wa-stop", () => { adm.envio = null; renderAdmin(); });
+    if (go) go.addEventListener("click", () => { marcarEnviado(adm.envio.ids[adm.envio.i]); adm.envio.enviados++; setTimeout(siguiente, 300); });
+    on("wa-skip", siguiente);
+    on("wa-stop", () => { adm.flash = adm.envio.enviados ? "Se enviaron " + adm.envio.enviados + (adm.envio.enviados === 1 ? " mensaje." : " mensajes.") : ""; adm.envio = null; renderAdmin(); });
 
     // cargar citas
     const pd = $("pday");
