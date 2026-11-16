@@ -763,6 +763,9 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       '<button type="button" class="menu-i" role="menuitem" data-act="nombre" data-id="' + c.id + '">Editar nombre</button>' +
       '<button type="button" class="menu-i" role="menuitem" data-act="tel" data-id="' + c.id + '">' + (c.telefono ? 'Cambiar teléfono' : 'Agregar teléfono') + '</button>' +
       '<button type="button" class="menu-i" role="menuitem" data-act="reag" data-id="' + c.id + '">' + ic("cal") + 'Reagendar para otra fecha</button>' +
+      (c.enviado_en
+        ? '<button type="button" class="menu-i" role="menuitem" data-act="noenviado" data-id="' + c.id + '">' + ic("chat") + 'Marcar WhatsApp como no enviado</button>'
+        : '<button type="button" class="menu-i" role="menuitem" data-act="enviado" data-id="' + c.id + '">' + ic("chat") + 'Marcar WhatsApp como enviado</button>') +
       '<div class="menu-sep"></div>' + est + '<div class="menu-sep"></div>' +
       '<button type="button" class="menu-i danger" role="menuitem" data-act="quitar" data-id="' + c.id + '">Quitar de la agenda</button></div>';
   }
@@ -1158,6 +1161,8 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       try {
         if (act === "estado") await staff("marcar_cita", { p_id: id, p_estado: b.dataset.est });
         if (act === "quitar-si") await staff("borrar_cita", { p_id: id });
+        if (act === "enviado") await staff("marcar_enviado", { p_id: id });
+        if (act === "noenviado") await staff("desmarcar_enviado", { p_id: id });
       } catch (e) {}
       loadDay();
     }));
