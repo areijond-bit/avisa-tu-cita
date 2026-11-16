@@ -206,7 +206,11 @@ tr.bad td { background: var(--stop-soft); color: var(--stop); }
 
 <script>
 (function () {
-  const KEY = "avisa-cita-demo-v1";
+  const KEY = "avisa-cita-demo-v2";
+  // Horario de consulta: de 8:00 a 14:00, una cita cada 15 minutos (24 lugares)
+  const HORARIO = { inicio: 8 * 60, fin: 14 * 60, cada: 15 };
+  const SLOTS = [];
+  for (let m = HORARIO.inicio; m < HORARIO.fin; m += HORARIO.cada) SLOTS.push(String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"));
   const CLINIC = { nombre: "Consultorio del Dr. Alejandro Alba", lugar: "Unidad de Medicina Familiar · Consultorio 8", tel: "55 1234 5678" };
   const PIN = "1234";
 
@@ -233,18 +237,35 @@ tr.bad td { background: var(--stop-soft); color: var(--stop); }
   function sample() {
     const t = today(), m = addDays(t, 1);
     const ago = min => new Date(Date.now() - min * 60000).toISOString();
-    const rows = [
-      [t, "08:00", "Rosa María Hernández Cruz", "43987612821", "llego", ago(130)],
-      [t, "08:20", "José Luis Martínez Pérez", "11856703347", "camino", ago(15)],
-      [t, "08:40", "María Elena López Torres", "62907514821", "pendiente", null],
-      [t, "09:00", "Francisco Javier Gómez Ruiz", "30816402955", "no_va", ago(240)],
-      [t, "09:20", "Guadalupe Sánchez Rivera", "75887109163", "camino", ago(6)],
-      [t, "09:40", "Antonio Flores Mendoza", "29846801472", "pendiente", null],
-      [t, "10:00", "Carmen Ortiz Vargas", "51896207738", "pendiente", null],
-      [t, "10:20", "Manuel Castillo Reyes", "84926305519", "pendiente", null],
-      [m, "08:00", "Teresa Morales Jiménez", "16897401204", "pendiente", null],
-      [m, "08:20", "Roberto Díaz Herrera", "92826508830", "pendiente", null]
+    const hoy = [
+      ["Rosa María Hernández Cruz", "43987612821", "llego", ago(130)],
+      ["José Luis Martínez Pérez", "11856703347", "camino", ago(15)],
+      ["María Elena López Torres", "62907514821", "pendiente", null],
+      ["Francisco Javier Gómez Ruiz", "30816402955", "no_va", ago(240)],
+      ["Guadalupe Sánchez Rivera", "75887109163", "camino", ago(6)],
+      ["Antonio Flores Mendoza", "29846801472", "pendiente", null],
+      ["Carmen Ortiz Vargas", "51896207738", "pendiente", null],
+      ["Manuel Castillo Reyes", "84926305519", "pendiente", null],
+      ["Juana Ramírez Aguilar", "20857306611", "camino", ago(40)],
+      ["Pedro Navarro Salinas", "67897005284", "pendiente", null],
+      ["Leticia Domínguez Ríos", "38866209902", "pendiente", null],
+      ["Alfonso Medina Rojas", "55917403376", "no_va", ago(90)],
+      ["Silvia Guerrero Peña", "71886508140", "pendiente", null],
+      ["Raúl Cortés Fuentes", "13897102265", "pendiente", null],
+      ["Martha Alicia Ríos León", "46906801593", "pendiente", null],
+      ["Héctor Vázquez Ibarra", "82877604418", "pendiente", null],
+      ["Josefina Campos Luna", "24896307027", "camino", ago(3)],
+      ["Ernesto Silva Montes", "59846905631", "pendiente", null],
+      ["Dolores Estrada Cano", "36917208854", "pendiente", null],
+      ["Jorge Alberto Rosas Soto", "90866504769", "pendiente", null],
+      ["Yolanda Mejía Paredes", "17887901382", "pendiente", null],
+      ["Salvador Ochoa Bravo", "63906602917", "pendiente", null],
+      ["Irma Contreras Vega", "48857409046", "pendiente", null],
+      ["Arturo Pineda Lara", "75897103558", "pendiente", null]
     ];
+    const manana = ["Teresa Morales Jiménez", "Roberto Díaz Herrera", "Gloria Andrade Serrano", "Ramón Juárez Olvera"];
+    const rows = hoy.map((r, i) => [t, SLOTS[i], ...r])
+      .concat(manana.map((n, i) => [m, SLOTS[i], n, "1689740" + (1204 + i * 1111), "pendiente", null]));
     return rows.map(([fecha, hora, nombre, nss, estado, avisoEn]) => ({ id: fecha + "|" + hora + "|" + nss, fecha, hora, nombre, nss, estado, avisoEn }));
   }
   let mem = null;
@@ -449,13 +470,21 @@ tr.bad td { background: var(--stop-soft); color: var(--stop); }
       if (isNaN(fromYmd(fecha).getTime())) err.push("fecha inválida");
       out.push({ linea: i + 1, fecha, hora, nombre, nss, err });
     });
+    // Si la lista no trae horas, se reparten solas en el horario, en el orden pegado
+    if (out.length && !out.some(r => r.hora)) {
+      out.forEach((r, i) => {
+        r.err = r.err.filter(e => e !== "falta la hora");
+        r.hora = SLOTS[i] || null;
+        if (!r.hora) r.err.push("ya no cabe en el horario (máximo " + SLOTS.length + ")");
+      });
+    }
     return out;
   }
 
-  const SAMPLE_PASTE = "Hora\tNombre\tNSS\n08:00\tPEREZ GARCIA JUAN CARLOS\t12345678901\n08:20\tRUIZ SOTO ANA LAURA\t98765432105\n8:40 am\tVEGA LUNA PEDRO\t4567-89-0123-4\n09:00\tCRUZ MORA ELENA";
+  const SAMPLE_PASTE = "Nombre\tNSS\nPEREZ GARCIA JUAN CARLOS\t12345678901\nRUIZ SOTO ANA LAURA\t98765432105\nVEGA LUNA PEDRO\t4567-89-0123-4\nCRUZ MORA ELENA\t31826704419\nLARA NUÑEZ OSCAR\t77896102583";
 
   function pasteHTML() {
-    let h = '<section class="paste"><p class="help">Copie la lista de citas del sistema del IMSS o de su Excel y péguela aquí. Cada renglón necesita <b>hora</b>, <b>nombre</b> y <b>número de seguro social</b>. Si el renglón trae fecha, se usa esa; si no, se usa la fecha de abajo.</p>' +
+    let h = '<section class="paste"><p class="help">Copie la lista de citas del sistema del IMSS o de su Excel y péguela aquí. Cada renglón necesita <b>nombre</b> y <b>número de seguro social</b>. Si la lista no trae horas, la app las reparte sola de <b>8:00 a 2:00</b>, una cada 15 minutos (hasta ' + SLOTS.length + ' pacientes), en el orden en que las pegó. Si el renglón trae fecha, se usa esa; si no, se usa la fecha de abajo.</p>' +
       '<div class="toolbar"><label style="display:flex;gap:8px;align-items:center;font-weight:600">Fecha de la agenda <input type="date" id="pday" value="' + adm.pasteDay + '"></label>' +
       '<button class="btn ghost" type="button" id="fill-sample">Llenar con un ejemplo</button></div>' +
       '<textarea id="ptext" spellcheck="false" placeholder="08:00   PEREZ GARCIA JUAN   12345678901">' + esc(adm.pasteText) + '</textarea>' +
