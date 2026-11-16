@@ -294,6 +294,29 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 .pform .ein { max-width: 420px; }
 .link.danger { color: var(--error); }
 #pq { max-width: 480px; }
+
+/* calendario */
+.dp { position: relative; display: inline-block; }
+.dp-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 16px; border: 2px solid var(--line); border-radius: 12px; background: var(--white); font-size: 17px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.dp-btn:hover, .dp-btn[aria-expanded="true"] { border-color: var(--blue); }
+.dp-btn svg.i { width: 20px; height: 20px; color: var(--blue); }
+.dp-caret { color: var(--muted); font-size: 14px; }
+.dp-pop { position: absolute; top: calc(100% + 8px); z-index: 30; width: min(330px, calc(100vw - 32px)); background: var(--white); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 16px 40px rgba(15, 27, 45, 0.18); padding: 16px; }
+.dp-right .dp-pop { right: 0; }
+.dp-left .dp-pop { left: 0; }
+.dp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.dp-head b { font-size: 19px; }
+.dp-nav { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--blue-tint); color: var(--blue); font-size: 22px; font-weight: 800; line-height: 1; }
+.dp-nav:hover { background: var(--blue); color: var(--white); }
+.dp-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+.dp-wd { font-size: 13px; font-weight: 800; color: var(--muted); padding: 4px 0; }
+.dp-day { aspect-ratio: 1; max-width: 100%; border: 0; border-radius: 50%; background: none; font-size: 16px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.dp-day:hover { background: var(--blue-tint); color: var(--blue); }
+.dp-day.today { box-shadow: inset 0 0 0 2px var(--orange); color: var(--orange-ink); font-weight: 800; }
+.dp-day.sel { background: var(--blue); color: var(--white); box-shadow: none; }
+.dp-foot { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.dp-quick { flex: 1; border: 2px solid var(--line); background: var(--white); border-radius: 10px; padding: 8px; font-weight: 700; color: var(--blue); }
+.dp-quick:hover { border-color: var(--blue); background: var(--blue-tint); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -535,7 +558,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     let h = '<div class="bar"><div><h2>' + longDay(adm.day) + '</h2><span class="sub">' + (adm.day === today() ? "Hoy · " : "") +
       (adm.list ? adm.list.length + ' citas' : 'Cargando…') + '</span></div>' +
       '<div class="row-btns"><button class="mbtn line" type="button" id="prev-day" aria-label="Día anterior">‹</button>' +
-      '<input class="date-in" type="date" id="day" value="' + adm.day + '" aria-label="Cambiar día">' +
+      datePicker("day", adm.day, "right") +
       '<button class="mbtn line" type="button" id="next-day" aria-label="Día siguiente">›</button></div></div>';
     if (adm.flash) h += '<div class="notice ok" role="status">' + ic("check") + '<span>' + adm.flash + '</span></div>';
     if (adm.loadErr) h += errBox(adm.loadErr);
@@ -617,7 +640,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 
   function cargarHTML() {
     let h = '<section class="stack paste"><div class="bar"><div><h2>Cargar citas</h2><span class="sub">Tome una foto de la lista y revise los nombres y las horas.</span></div></div>' +
-      '<div class="row-btns"><label for="pday" style="font-weight:700;font-size:17px">Fecha de las citas</label><input class="date-in" type="date" id="pday" value="' + adm.pasteDay + '"></div>';
+      '<div class="row-btns"><span style="font-weight:700;font-size:17px">Fecha de las citas</span>' + datePicker("pday", adm.pasteDay, "left") + '</div>';
     if (adm.ocr !== null) {
       h += '<div class="ocr"><b>Leyendo la lista…</b> <span class="sub">Puede tardar unos segundos.</span><div class="prog"><span style="width:' + Math.round(adm.ocr * 100) + '%"></span></div></div>';
     } else {
@@ -766,6 +789,56 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       (p.confirmDel ? '<span class="sub">¿Seguro?</span><button class="mbtn orange" type="button" id="p-del-yes">Sí, borrar</button>' : '') + '</div></form>';
   }
 
+  // ---------- Calendario propio ----------
+  const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+  let dp = { open: null, month: null };
+  const shortDay = s => { const d = fromYmd(s); return DIAS[d.getDay()] + " " + d.getDate() + " " + MESES[d.getMonth()].slice(0, 3) + " " + d.getFullYear(); };
+  function datePicker(id, value, side) {
+    let h = '<div class="dp dp-' + side + '"><button type="button" class="dp-btn" data-dp="' + id + '" aria-haspopup="dialog" aria-expanded="' + (dp.open === id) + '">' +
+      ic("cal") + '<span>' + shortDay(value) + '</span><span class="dp-caret" aria-hidden="true">▾</span></button>';
+    if (dp.open === id) {
+      const [y, m] = dp.month.split("-").map(Number);
+      const first = new Date(y, m - 1, 1), start = (first.getDay() + 6) % 7, days = new Date(y, m, 0).getDate(), t = today();
+      h += '<div class="dp-pop" role="dialog" aria-label="Escoger fecha"><div class="dp-head">' +
+        '<button type="button" class="dp-nav" data-dpm="-1" aria-label="Mes anterior">‹</button>' +
+        '<b>' + MESES[m - 1].charAt(0).toUpperCase() + MESES[m - 1].slice(1) + ' ' + y + '</b>' +
+        '<button type="button" class="dp-nav" data-dpm="1" aria-label="Mes siguiente">›</button></div>' +
+        '<div class="dp-grid">' + ["L", "M", "M", "J", "V", "S", "D"].map(d => '<span class="dp-wd">' + d + '</span>').join("");
+      for (let i = 0; i < start; i++) h += '<span></span>';
+      for (let d = 1; d <= days; d++) {
+        const s = y + "-" + pad(m) + "-" + pad(d);
+        h += '<button type="button" class="dp-day' + (s === value ? ' sel' : '') + (s === t ? ' today' : '') + '" data-dpday="' + s + '" aria-label="' + longDay(s) + '">' + d + '</button>';
+      }
+      h += '</div><div class="dp-foot"><button type="button" class="dp-quick" data-dpday="' + t + '">Hoy</button>' +
+        '<button type="button" class="dp-quick" data-dpday="' + addDays(t, 1) + '">Mañana</button></div></div>';
+    }
+    return h + '</div>';
+  }
+  function elegirFecha(id, s) {
+    dp.open = null;
+    if (id === "day") { adm.day = s; adm.list = null; adm.envio = null; renderAdmin(); loadDay(); }
+    else { adm.pasteDay = s; renderAdmin(); }
+  }
+  function wireDatePicker() {
+    app.querySelectorAll("[data-dp]").forEach(b => b.addEventListener("click", e => {
+      e.stopPropagation();
+      const id = b.dataset.dp;
+      if (dp.open === id) { dp.open = null; } else { dp.open = id; dp.month = (id === "day" ? adm.day : adm.pasteDay).slice(0, 7); }
+      renderAdmin();
+    }));
+    const pop = app.querySelector(".dp-pop");
+    if (!pop) return;
+    pop.addEventListener("click", e => e.stopPropagation());
+    pop.querySelectorAll("[data-dpm]").forEach(b => b.addEventListener("click", () => {
+      const [y, m] = dp.month.split("-").map(Number), d = new Date(y, m - 1 + +b.dataset.dpm, 1);
+      dp.month = d.getFullYear() + "-" + pad(d.getMonth() + 1); renderAdmin();
+    }));
+    pop.querySelectorAll("[data-dpday]").forEach(b => b.addEventListener("click", () => elegirFecha(dp.open, b.dataset.dpday)));
+  }
+  document.addEventListener("click", () => { if (dp.open) { dp.open = null; renderAdmin(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && dp.open) { dp.open = null; renderAdmin(); } });
+
   function qrHTML() {
     return '<section class="poster"><div><span class="eyebrow">' + CLINIC.doctor + ' · ' + CLINIC.consultorio + '</span><h2>¿Tiene cita? Avise si viene.</h2>' +
       '<ol><li>Apunte la cámara de su celular a este código.</li><li>Guarde la página para el día de su cita.</li><li>Escriba su nombre y toque <b>Confirmar</b> o <b>Cancelar</b>.</li></ol>' +
@@ -793,6 +866,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   }
 
   function wireAdmin() {
+    wireDatePicker();
     on("logout", salir);
     app.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => {
       adm.tab = b.dataset.tab; adm.msg = ""; adm.flash = ""; adm.pedit = null; adm.editTel = null; renderAdmin();
