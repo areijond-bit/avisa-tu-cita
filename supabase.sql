@@ -30,6 +30,11 @@ create table if not exists public.personal (
 alter table public.citas enable row level security;
 alter table public.personal enable row level security;
 
+-- Pacientes (anon) nunca leen las tablas directo; el personal sí, filtrado por las reglas de abajo
+revoke all on public.citas from anon;
+revoke all on public.personal from anon, authenticated;
+grant select, insert, update, delete on public.citas to authenticated;
+
 -- ¿La persona que entró es del consultorio?
 create or replace function public.es_personal()
 returns boolean
