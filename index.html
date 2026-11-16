@@ -300,6 +300,20 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 /* calendario */
 .pcount { font-weight: 700; color: var(--blue); }
 
+/* pacientes: borrar y seleccionar */
+.pbar { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
+.pall { display: inline-flex; gap: 8px; align-items: center; font-weight: 700; font-size: 16px; cursor: pointer; }
+.pall input, .pchk { width: 22px; height: 22px; accent-color: var(--blue); cursor: pointer; flex: none; }
+.prow.picked { background: var(--blue-tint); }
+.prow.confirm { background: #FDECEA; flex-wrap: wrap; }
+.sbtn.del-p { display: inline-flex; gap: 6px; align-items: center; border-color: #F2C4BF; color: var(--error); }
+.sbtn.del-p:hover { background: #FDECEA; border-color: var(--error); }
+.sbtn.del-p svg.i { width: 16px; height: 16px; }
+.mbtn.danger { background: var(--error); }
+.mbtn.danger:hover { background: #8F1C13; }
+.selbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; padding: 12px 16px; border: 2px solid var(--blue); border-radius: 12px; background: var(--blue-tint); }
+@media (max-width: 600px) { .prow { flex-wrap: wrap; } .prow > .row-btns { width: 100%; justify-content: flex-end; } }
+
 /* agenda por lugares: horas fijas a la izquierda, nombres que se arrastran */
 .board { border: 1px solid var(--line); border-radius: 14px; overflow: visible; }
 .slot { display: grid; grid-template-columns: 84px minmax(0, 1fr); border-top: 1px solid var(--line); min-height: 68px; }
@@ -416,7 +430,8 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     chat: '<path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/>',
     paste: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/>',
     camera: '<path d="M22 18.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2h3.5l2-3h5l2 3H20a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
-    alert: '<circle cx="12" cy="12" r="9.5"/><line x1="12" y1="7.5" x2="12" y2="12.5"/><line x1="12" y1="16.5" x2="12" y2="16.5"/>'
+    alert: '<circle cx="12" cy="12" r="9.5"/><line x1="12" y1="7.5" x2="12" y2="12.5"/><line x1="12" y1="16.5" x2="12" y2="16.5"/>',
+    trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'
   };
   const ic = n => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + ICON[n] + '</svg>';
   const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3h5v6.5H21v5h-6.5V21h-5v-6.5H3v-5h6.5z" fill="#fff"/></svg>';
@@ -900,13 +915,31 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     const q = norm(adm.pq);
     const list = adm.pacientes.filter(p => !q || norm(p.nombre).includes(q));
     const sinTel = adm.pacientes.filter(p => !p.telefono).length;
-    h += '<p class="sub">' + adm.pacientes.length + ' pacientes' + (sinTel ? ' · ' + sinTel + ' sin teléfono' : '') + '</p><div class="list">';
+    const sel = adm.psel || (adm.psel = new Set());
+    [...sel].forEach(id => { if (!adm.pacientes.some(p => p.id === id)) sel.delete(id); });
+    h += '<div class="pbar"><label class="pall"><input type="checkbox" id="p-all"' + (list.length && list.every(p => sel.has(p.id)) ? ' checked' : '') + '> Seleccionar todos</label>' +
+      '<span class="sub">' + adm.pacientes.length + ' pacientes' + (sinTel ? ' · ' + sinTel + ' sin teléfono' : '') + '</span></div>';
+    if (sel.size) {
+      h += '<div class="selbar">' + (adm.pbulk
+        ? '<b>¿Borrar ' + sel.size + (sel.size === 1 ? ' paciente' : ' pacientes') + '?</b> <span class="sub">No se puede deshacer. Sus citas se quedan en la agenda.</span>' +
+          '<div class="row-btns"><button class="mbtn danger" type="button" id="p-bulk-yes">Sí, borrar</button><button class="mbtn line" type="button" id="p-bulk-no">No</button></div>'
+        : '<b>' + sel.size + (sel.size === 1 ? ' seleccionado' : ' seleccionados') + '</b>' +
+          '<div class="row-btns"><button class="mbtn danger" type="button" id="p-bulk">Borrar seleccionados</button><button class="mbtn line" type="button" id="p-clear">Quitar selección</button></div>') + '</div>';
+    }
+    h += '<div class="list">';
     if (!list.length) h += '<div class="empty">' + (adm.pacientes.length ? 'Nadie con ese nombre.' : 'Todavía no hay pacientes. Se agregan solos al cargar una lista de citas.') + '</div>';
     list.forEach(p => {
       if (adm.pedit && adm.pedit.id === p.id) { h += pacForm(adm.pedit); return; }
-      h += '<div class="prow"><div style="min-width:0"><div class="name">' + esc(p.nombre) + numTag(p) + '</div>' +
+      if (adm.pdel === p.id) {
+        h += '<div class="prow confirm"><div><b>¿Borrar a ' + esc(p.nombre) + numTag(p) + '?</b><div class="sub">No se puede deshacer. Sus citas se quedan en la agenda.</div></div>' +
+          '<div class="row-btns"><button class="mbtn danger" type="button" data-pdel-yes="' + p.id + '">Sí, borrar</button><button class="mbtn line" type="button" id="p-del-no">No</button></div></div>';
+        return;
+      }
+      h += '<div class="prow' + (sel.has(p.id) ? ' picked' : '') + '"><input class="pchk" type="checkbox" data-psel="' + p.id + '"' + (sel.has(p.id) ? ' checked' : '') + ' aria-label="Seleccionar a ' + esc(p.nombre) + '">' +
+        '<div style="min-width:0;flex:1"><div class="name">' + esc(p.nombre) + numTag(p) + '</div>' +
         '<div class="meta">' + (p.telefono ? ic("phone") + telShow(p.telefono) : '<span class="nophone">Sin teléfono</span>') + '</div></div>' +
-        '<button class="sbtn" type="button" data-pedit="' + p.id + '">' + (p.telefono ? 'Editar' : 'Agregar teléfono') + '</button></div>';
+        '<div class="row-btns"><button class="sbtn" type="button" data-pedit="' + p.id + '">' + (p.telefono ? 'Editar' : 'Agregar teléfono') + '</button>' +
+        '<button class="sbtn del-p" type="button" data-pdel="' + p.id + '" aria-label="Borrar a ' + esc(p.nombre) + '">' + ic("trash") + 'Borrar</button></div></div>';
     });
     return h + '</div></section>';
   }
@@ -1181,6 +1214,29 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     on("p-cancel", () => { adm.pedit = null; renderAdmin(); });
     on("p-del", () => { adm.pedit.confirmDel = true; renderAdmin(); });
     on("p-del-yes", async () => { busy(); try { await staff("paciente_borrar", { p_id: adm.pedit.id }); } catch (e) {} adm.pedit = null; loadPacientes(); });
+    // borrar desde la lista: uno por uno o varios seleccionados
+    app.querySelectorAll("[data-pdel]").forEach(b => b.addEventListener("click", () => { adm.pdel = b.dataset.pdel; adm.pedit = null; renderAdmin(); }));
+    on("p-del-no", () => { adm.pdel = null; renderAdmin(); });
+    app.querySelectorAll("[data-pdel-yes]").forEach(b => b.addEventListener("click", async () => {
+      busy(); try { await staff("paciente_borrar", { p_id: b.dataset.pdelYes }); } catch (e) {}
+      adm.psel.delete(b.dataset.pdelYes); adm.pdel = null; loadPacientes();
+    }));
+    app.querySelectorAll("[data-psel]").forEach(c => c.addEventListener("change", () => {
+      c.checked ? adm.psel.add(c.dataset.psel) : adm.psel.delete(c.dataset.psel); adm.pbulk = false; renderAdmin();
+    }));
+    const pall = $("p-all");
+    if (pall) pall.addEventListener("change", () => {
+      const q = norm(adm.pq), vis = adm.pacientes.filter(p => !q || norm(p.nombre).includes(q));
+      vis.forEach(p => pall.checked ? adm.psel.add(p.id) : adm.psel.delete(p.id)); adm.pbulk = false; renderAdmin();
+    });
+    on("p-clear", () => { adm.psel.clear(); adm.pbulk = false; renderAdmin(); });
+    on("p-bulk", () => { adm.pbulk = true; renderAdmin(); });
+    on("p-bulk-no", () => { adm.pbulk = false; renderAdmin(); });
+    on("p-bulk-yes", async () => {
+      busy();
+      for (const id of [...adm.psel]) { try { await staff("paciente_borrar", { p_id: id }); } catch (e) { break; } }
+      adm.psel.clear(); adm.pbulk = false; loadPacientes();
+    });
     const fp = $("f-pac");
     if (fp) fp.addEventListener("submit", async e => {
       e.preventDefault();
