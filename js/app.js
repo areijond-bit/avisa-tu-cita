@@ -87,7 +87,7 @@
 
   function topBar() {
     return '<header class="top"><div class="wrap"><div class="avatar">' + CLINIC.iniciales + '</div>' +
-      '<div class="id"><span class="doc">' + CLINIC.doctor + '</span><span class="place">' + CLINIC.especialidad + " · " + CLINIC.titulo + '</span></div></div></header>';
+      '<div class="id"><span class="doc">' + CLINIC.doctor + '</span><span class="place">' + CLINIC.titulo + '</span></div></div></header>';
   }
 
   // =================== PACIENTE ===================
