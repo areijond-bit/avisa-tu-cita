@@ -250,7 +250,8 @@
     ? "https://wa.me/" + telWa(c.telefono) + "?text=" + encodeURIComponent(mensaje(c))
     : "https://web.whatsapp.com/send?phone=" + telWa(c.telefono) + "&text=" + encodeURIComponent(mensaje(c));
   const WA_TAB = "avisa-whatsapp";
-  const porEnviar = () => (adm.list || []).filter(c => c.telefono && c.estado === "pendiente" && !c.enviado_en);
+  // A quién le falta el WhatsApp: tiene número, no se le ha mandado y la cita sigue en pie
+  const porEnviar = () => (adm.list || []).filter(c => c.telefono && !c.enviado_en && c.estado !== "no_va" && c.estado !== "llego");
 
   function agendaHTML() {
     let h = '<div class="bar"><div><h2>' + longDay(adm.day) + '</h2><span class="sub">' + (adm.day === today() ? "Hoy · " : "") +
@@ -277,10 +278,10 @@
       } else adm.envio = null;
     }
     if (!adm.envio) {
-      const pend = porEnviar(), sinTel = list.filter(c => !c.telefono).length;
-      h += '<div class="sendbar">' +
-        (pend.length ? '<button class="mbtn wa" type="button" id="wa-all">' + ic("chat") + 'Enviar WhatsApp a todos (' + pend.length + ')</button>' : '<span class="sub">' + (list.length ? 'No hay mensajes pendientes por enviar.' : '') + '</span>') +
-        (sinTel ? '<span class="sub">' + sinTel + (sinTel === 1 ? ' paciente no tiene' : ' pacientes no tienen') + ' teléfono.</span>' : '') + '</div>';
+      const pend = porEnviar().length, sinTel = list.filter(c => !c.telefono).length;
+      h += '<div class="sendbar"><button class="mbtn wa" type="button" id="wa-all">' + ic("chat") + 'Enviar WhatsApp a todos' + (pend ? ' (' + pend + ')' : '') + '</button>' +
+        (sinTel ? '<span class="sub">' + sinTel + (sinTel === 1 ? ' paciente no tiene' : ' pacientes no tienen') + ' número registrado.</span>' : '') + '</div>';
+      if (adm.avisoWa) h += '<div class="notice warn" role="status">' + ic("alert") + '<span>' + adm.avisoWa + '</span></div>';
     }
 
     // Siempre se ven los 24 lugares del horario; las horas van en su propia columna
@@ -305,7 +306,9 @@
       ? '<button class="sbtn ghost" type="button" data-undo="' + c.id + '">Deshacer</button>'
       : '<button class="sbtn att" type="button" data-llego="' + c.id + '">Atendido</button>';
     const tel = c.telefono
-      ? '<button class="telbtn" type="button" data-tel="' + c.id + '">' + ic("phone") + telShow(c.telefono) + '</button>' + (c.enviado_en ? ' <span class="sent">' + ic("check") + 'enviado</span>' : '')
+      ? '<button class="telbtn" type="button" data-tel="' + c.id + '">' + ic("phone") + telShow(c.telefono) + '</button>' + (c.enviado_en
+        ? '<button class="sent-toggle on" type="button" data-sent="' + c.id + '" data-tip="Clic para marcar como no enviado">' + ic("check") + 'Enviado</button>'
+        : '<button class="sent-toggle" type="button" data-sent="' + c.id + '" data-tip="Clic para marcar como enviado">No enviado</button>')
       : '<button class="telbtn add" type="button" data-tel="' + c.id + '">+ Agregar teléfono</button>';
     const wa = c.telefono ? '<a class="sbtn wa" href="' + esc(waLink(c)) + '" target="' + WA_TAB + '" rel="noopener" data-wa="' + c.id + '" aria-label="WhatsApp a ' + esc(c.nombre) + '">' + ic("chat") + '</a>' : '';
     let h = '<div class="ccard ' + c.estado + '" data-cid="' + c.id + '">' +
@@ -374,9 +377,7 @@
       '<button type="button" class="menu-i" role="menuitem" data-act="nombre" data-id="' + c.id + '">Editar nombre</button>' +
       '<button type="button" class="menu-i" role="menuitem" data-act="tel" data-id="' + c.id + '">' + (c.telefono ? 'Cambiar teléfono' : 'Agregar teléfono') + '</button>' +
       '<button type="button" class="menu-i" role="menuitem" data-act="reag" data-id="' + c.id + '">' + ic("cal") + 'Reagendar para otra fecha</button>' +
-      (!c.telefono ? "" : c.enviado_en
-        ? '<button type="button" class="menu-i" role="menuitem" data-act="noenviado" data-id="' + c.id + '">' + ic("chat") + 'Marcar WhatsApp como no enviado</button>'
-        : '<button type="button" class="menu-i" role="menuitem" data-act="enviado" data-id="' + c.id + '">' + ic("chat") + 'Marcar WhatsApp como enviado</button>') +
+
       '<div class="menu-sep"></div>' + est + '<div class="menu-sep"></div>' +
       '<button type="button" class="menu-i danger" role="menuitem" data-act="quitar" data-id="' + c.id + '">Quitar de la agenda</button></div>';
   }
@@ -629,7 +630,7 @@
   }
   function elegirFecha(id, s) {
     dp.open = null;
-    if (id === "day") { adm.day = s; adm.list = null; adm.envio = null; renderAdmin(); loadDay(); }
+    if (id === "day") { adm.day = s; adm.list = null; adm.envio = null; adm.avisoWa = ""; renderAdmin(); loadDay(); }
     else if (id === "reag") { adm.reag.fecha = s; adm.reag.ocupadas = null; adm.reag.err = ""; renderAdmin(); cargarOcupadas(); }
     else { adm.pasteDay = s; renderAdmin(); }
   }
@@ -734,16 +735,16 @@
     wireDatePicker();
     on("logout", salir);
     app.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => {
-      adm.tab = b.dataset.tab; adm.msg = ""; adm.flash = ""; adm.pedit = null; adm.editTel = null; renderAdmin();
+      adm.tab = b.dataset.tab; adm.msg = ""; adm.flash = ""; adm.avisoWa = ""; adm.pedit = null; adm.editTel = null; renderAdmin();
       if (adm.tab === "agenda") loadDay();
       if (adm.tab === "pacientes" || adm.tab === "cargar") loadPacientes();
     }));
 
     // agenda
     const day = $("day");
-    if (day) day.addEventListener("change", () => { if (day.value) { adm.day = day.value; adm.list = null; adm.envio = null; renderAdmin(); loadDay(); } });
-    on("prev-day", () => { adm.day = addDays(adm.day, -1); adm.list = null; adm.envio = null; renderAdmin(); loadDay(); });
-    on("next-day", () => { adm.day = addDays(adm.day, 1); adm.list = null; adm.envio = null; renderAdmin(); loadDay(); });
+    if (day) day.addEventListener("change", () => { if (day.value) { adm.day = day.value; adm.list = null; adm.envio = null; adm.avisoWa = ""; renderAdmin(); loadDay(); } });
+    on("prev-day", () => { adm.day = addDays(adm.day, -1); adm.list = null; adm.envio = null; adm.avisoWa = ""; renderAdmin(); loadDay(); });
+    on("next-day", () => { adm.day = addDays(adm.day, 1); adm.list = null; adm.envio = null; adm.avisoWa = ""; renderAdmin(); loadDay(); });
     app.querySelectorAll("[data-llego]").forEach(b => b.addEventListener("click", async () => { busy(); try { await staff("marcar_cita", { p_id: b.dataset.llego, p_estado: "llego" }); } catch (e) {} loadDay(); }));
     app.querySelectorAll("[data-undo]").forEach(b => b.addEventListener("click", async () => { busy(); try { await staff("marcar_cita", { p_id: b.dataset.undo, p_estado: "pendiente" }); } catch (e) {} loadDay(); }));
     app.querySelectorAll("[data-tel]").forEach(b => b.addEventListener("click", () => { adm.editTel = b.dataset.tel; renderAdmin(); const t = $("tel-in"); if (t) t.focus(); }));
@@ -830,7 +831,23 @@
     });
     const marcarEnviado = id => { const c = adm.list.find(x => x.id === id); if (c) c.enviado_en = new Date().toISOString(); staff("marcar_enviado", { p_id: id }).catch(() => {}); };
     app.querySelectorAll("[data-wa]").forEach(a => a.addEventListener("click", () => { marcarEnviado(a.dataset.wa); setTimeout(renderAdmin, 300); }));
-    on("wa-all", () => { adm.envio = { ids: porEnviar().map(c => c.id), i: 0, enviados: 0 }; adm.flash = ""; renderAdmin(); });
+    on("wa-all", () => {
+      const lista = adm.list || [], ids = porEnviar().map(c => c.id);
+      adm.flash = "";
+      if (ids.length) { adm.avisoWa = ""; adm.envio = { ids, i: 0, enviados: 0 }; return renderAdmin(); }
+      if (!lista.length) adm.avisoWa = "No hay citas este día.";
+      else if (!lista.some(c => c.telefono)) adm.avisoWa = "Ningún paciente de este día tiene número registrado. Agréguelo con «+ Agregar teléfono».";
+      else adm.avisoWa = "Ya se les envió a todos los que tienen número registrado.";
+      renderAdmin();
+    });
+    app.querySelectorAll("[data-sent]").forEach(b => b.addEventListener("click", async () => {
+      const c = adm.list.find(x => x.id === b.dataset.sent); if (!c) return;
+      const enviar = !c.enviado_en;
+      c.enviado_en = enviar ? new Date().toISOString() : null;
+      adm.avisoWa = ""; renderAdmin();
+      try { await staff(enviar ? "marcar_enviado" : "desmarcar_enviado", { p_id: c.id }); } catch (e) {}
+      loadDay();
+    }));
     const siguiente = () => {
       const q = adm.envio; q.i++;
       if (q.i >= q.ids.length) { adm.flash = "Listo: se enviaron " + q.enviados + (q.enviados === 1 ? " mensaje." : " mensajes."); adm.envio = null; }
