@@ -616,7 +616,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
         .replace(/\b\d{1,2}:\d{2}\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/gi, " ")
         .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ' ]/g, " ")
         .replace(/\s+/g, " ").trim())
-      .filter(l => l.split(" ").filter(w => w.length > 1).length >= 2 && l.length >= 5 && !/^(nombre|paciente|hora|fecha|lista|consultorio)\b/i.test(l))
+      .filter(l => l.split(" ").filter(w => w.length > 1).length >= 2 && l.length >= 5 && !/\b(nombre|paciente|hora|fecha|lista|consultorio|folio|afiliaci)/i.test(l))
       .map(l => ({ nombre: l.toLowerCase().replace(/(^|\s)(\S)/g, (a, b, c) => b + c.toUpperCase()) }));
   }
   async function leerFoto(file) {
