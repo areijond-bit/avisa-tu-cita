@@ -537,6 +537,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       '<div class="row-btns"><button class="mbtn line" type="button" id="prev-day" aria-label="Día anterior">‹</button>' +
       '<input class="date-in" type="date" id="day" value="' + adm.day + '" aria-label="Cambiar día">' +
       '<button class="mbtn line" type="button" id="next-day" aria-label="Día siguiente">›</button></div></div>';
+    if (adm.flash) h += '<div class="notice ok" role="status">' + ic("check") + '<span>' + adm.flash + '</span></div>';
     if (adm.loadErr) h += errBox(adm.loadErr);
     if (!adm.list) return h;
     const list = adm.list, n = { camino: 0, pendiente: 0, no_va: 0, llego: 0 };
@@ -636,7 +637,8 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
         '<p class="help">Toque un nombre para corregirlo y la hora para cambiarla. Si la foto juntó dos nombres, use <b>Separar</b>.</p>' +
         '<ol class="edit">' + rowsHTML() + '</ol>' +
         '<div class="row-btns"><button class="mbtn line" type="button" id="add-row">+ Agregar paciente</button>' +
-        '<button class="mbtn orange" type="button" id="do-save">Guardar citas</button></div>';
+        '<button class="mbtn orange" type="button" id="do-save">Guardar citas</button></div>' +
+        '<p class="help">Al guardar, los pacientes nuevos se agregan solos a <b>Pacientes</b>. Ahí les puede poner su teléfono.</p>';
     }
     return h + '</section>';
   }
@@ -793,7 +795,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   function wireAdmin() {
     on("logout", salir);
     app.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => {
-      adm.tab = b.dataset.tab; adm.msg = ""; adm.pedit = null; adm.editTel = null; renderAdmin();
+      adm.tab = b.dataset.tab; adm.msg = ""; adm.flash = ""; adm.pedit = null; adm.editTel = null; renderAdmin();
       if (adm.tab === "agenda") loadDay();
       if (adm.tab === "pacientes" || adm.tab === "cargar") loadPacientes();
     }));
@@ -851,10 +853,12 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       if (rows.some((r, i) => rowProblem(r, i, by))) { adm.msg = "Revise los renglones marcados antes de guardar."; return renderAdmin(); }
       busy();
       try {
-        await staff("guardar_citas", { p_citas: rows.map(r => {
+        const res = await staff("guardar_citas", { p_citas: rows.map(r => {
           const pid = autoPid(r);
           return { fecha: adm.pasteDay, hora: r.hora, nombre: r.nombre.trim().replace(/\s+/g, " "), paciente_id: pid && pid !== "nuevo" ? pid : null, nuevo: pid === "nuevo" };
         }) });
+        adm.flash = "Se guardaron " + res.citas + (res.citas === 1 ? " cita." : " citas.") +
+          (res.nuevos ? " " + res.nuevos + (res.nuevos === 1 ? " paciente nuevo se agregó" : " pacientes nuevos se agregaron") + " a Pacientes." : "");
         adm.day = adm.pasteDay; adm.rows = null; adm.pasteText = ""; adm.showPaste = false; adm.pacientes = null;
         adm.tab = "agenda"; adm.list = null; adm.msg = "";
         renderAdmin(); loadDay();

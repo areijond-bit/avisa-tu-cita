@@ -314,6 +314,8 @@ declare
   nm text;
   pid uuid;
   n int;
+  nuevos int := 0;
+  total int := 0;
 begin
   if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
   fechas := array(select distinct (x ->> 'fecha')::date from jsonb_array_elements(p_citas) x);
@@ -330,7 +332,9 @@ begin
     end if;
     if pid is null then
       insert into public.pacientes (nombre, num) values (nm, public.siguiente_num(nm)) returning id into pid;
+      nuevos := nuevos + 1;
     end if;
+    total := total + 1;
 
     insert into public.citas (fecha, hora, nombre, paciente_id, estado, aviso_en, token, enviado_en)
     select (r ->> 'fecha')::date, (r ->> 'hora')::time, nm, pid,
@@ -345,7 +349,7 @@ begin
          limit 1
       ) v on true;
   end loop;
-  return jsonb_build_object('ok', true);
+  return jsonb_build_object('ok', true, 'citas', total, 'nuevos', nuevos);
 end;
 $$;
 
