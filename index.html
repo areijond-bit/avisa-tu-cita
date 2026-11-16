@@ -216,7 +216,7 @@ tr.bad td { color: var(--error); background: #FDECEA; }
 (function () {
   // ======== CONFIGURACIÓN ========
   // Datos de Supabase (Project Settings → API). Si están vacíos, la página funciona en modo de prueba.
-  const CONFIG = { url: "", key: "" };
+  const CONFIG = { url: "https://soijjnyeiziokkegzrmn.supabase.co", key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvaWpqbnllaXppb2trZWd6cm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ4MDEzODgsImV4cCI6MjExMDM3NzM4OH0.Y_DJAtGIL3APekJzg0YfVDsfN-7_6Y0SM0xYYMAKmEA" };
   const CLINIC = { doctor: "Dr. Alejandro Alba", lugar: "Medicina Familiar · Consultorio 8", tel: "55 1234 5678" };
   // Horario de consulta: de 8:00 a 14:00, una consulta cada 15 minutos (24 lugares)
   const HORARIO = { inicio: 8 * 60, fin: 14 * 60, cada: 15 };
