@@ -520,3 +520,16 @@ begin
 end;
 $$;
 grant execute on function public.reagendar_cita(text, uuid, date, time) to anon, authenticated;
+
+-- Quitar la marca de "enviado" (por si no se mandó el WhatsApp o hay que mandarlo otra vez)
+create or replace function public.desmarcar_enviado(p_clave text, p_id uuid)
+returns jsonb
+language plpgsql volatile security definer set search_path = public
+as $$
+begin
+  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
+  update public.citas set enviado_en = null where id = p_id;
+  return jsonb_build_object('ok', true);
+end;
+$$;
+grant execute on function public.desmarcar_enviado(text, uuid) to anon, authenticated;
