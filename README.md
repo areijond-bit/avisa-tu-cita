@@ -71,3 +71,7 @@ Arriba de `js/app.js`:
 ## Pendiente
 
 - El envío de WhatsApp es manual (un clic por paciente). Para que sea automático hace falta la API de WhatsApp Business de Meta, con un número propio y costo por mensaje.
+
+## Al publicar un cambio
+
+En `index.html`, `css/app.css` y `js/app.js` llevan `?v=AAAAMMDDHHMM`. Cambiar ese número en cada publicación obliga a los navegadores a bajar la versión nueva en lugar de usar la guardada.
