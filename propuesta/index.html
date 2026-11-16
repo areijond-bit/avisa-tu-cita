@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propuesta de diseño · Consultorio Dr. Alba</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<style>
+:root {
+  --blue-700: #0847A6;
+  --blue-600: #0B5CD5;
+  --blue-50: #EEF4FD;
+  --blue-100: #DCE8FB;
+  --orange-600: #E8620F;
+  --orange-50: #FFF3EB;
+  --green-600: #138A4E;
+  --green-50: #E9F6EF;
+  --red-600: #C2341F;
+  --ink-900: #0A2540;
+  --ink-700: #344A63;
+  --ink-500: #64748B;
+  --ink-300: #B6C2D1;
+  --line: #E3E8EF;
+  --bg-soft: #F6F8FB;
+  --white: #FFFFFF;
+  --radius: 12px;
+  --font: "Figtree", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg-soft); color: var(--ink-900); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; cursor: pointer; }
+h1, h2, h3, p { margin: 0; }
+
+.switcher { position: sticky; top: 0; z-index: 10; display: flex; justify-content: center; gap: 4px; padding: 12px; background: var(--ink-900); }
+.switcher button { border: 0; background: transparent; color: #C9D6E8; padding: 8px 18px; border-radius: 999px; font-weight: 600; font-size: 14px; }
+.switcher button.on { background: var(--white); color: var(--ink-900); }
+.note { text-align: center; color: var(--ink-500); font-size: 13px; padding: 10px 16px 0; }
+
+/* ---------- Paciente ---------- */
+.patient { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; padding: 32px 16px 64px; }
+.phone { width: 390px; max-width: 100%; background: var(--white); border-radius: 28px; border: 1px solid var(--line); overflow: hidden; box-shadow: 0 30px 60px -30px rgba(10, 37, 64, .25); }
+.phone-cap { text-align: center; font-size: 13px; color: var(--ink-500); margin-top: 12px; }
+
+.p-head { padding: 22px 22px 18px; border-bottom: 1px solid var(--line); display: flex; gap: 14px; align-items: center; }
+.avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--blue-600); color: var(--white); display: grid; place-items: center; font-weight: 700; font-size: 20px; flex: none; }
+.p-head .who b { display: block; font-size: 18px; font-weight: 700; }
+.p-head .who span { display: block; font-size: 14px; color: var(--ink-500); margin-top: 2px; }
+.badge-ok { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--green-600); margin-top: 6px; }
+
+.p-body { padding: 26px 22px 28px; display: flex; flex-direction: column; gap: 22px; }
+.p-body h1 { font-size: 26px; line-height: 1.2; font-weight: 800; letter-spacing: -0.01em; }
+.p-body .lead { font-size: 17px; color: var(--ink-700); line-height: 1.5; }
+
+.appt { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.appt-top { display: flex; gap: 16px; padding: 18px; align-items: center; }
+.datebox { width: 64px; flex: none; text-align: center; border-radius: 12px; background: var(--blue-50); padding: 8px 0 10px; }
+.datebox small { display: block; font-size: 12px; font-weight: 700; color: var(--blue-600); text-transform: uppercase; letter-spacing: .06em; }
+.datebox b { display: block; font-size: 28px; font-weight: 800; color: var(--ink-900); line-height: 1.1; }
+.appt-top .when b { display: block; font-size: 18px; font-weight: 700; }
+.appt-top .when span { display: block; font-size: 15px; color: var(--ink-500); margin-top: 2px; }
+.appt-time { font-size: 30px !important; font-weight: 800 !important; color: var(--blue-600) !important; margin-top: 4px !important; font-variant-numeric: tabular-nums; }
+.appt-meta { border-top: 1px solid var(--line); padding: 14px 18px; display: flex; gap: 10px; align-items: center; font-size: 15px; color: var(--ink-700); background: var(--bg-soft); }
+.appt-meta svg { width: 18px; height: 18px; color: var(--ink-500); flex: none; }
+
+.cta { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 60px; border-radius: 14px; border: 0; font-size: 19px; font-weight: 700; }
+.cta svg { width: 22px; height: 22px; }
+.cta.primary { background: var(--blue-600); color: var(--white); }
+.cta.primary:hover { background: var(--blue-700); }
+.cta.secondary { background: var(--white); color: var(--orange-600); border: 1.5px solid #F4C3A3; }
+.cta.secondary:hover { background: var(--orange-50); }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.fine { font-size: 13px; color: var(--ink-500); text-align: center; line-height: 1.5; }
+
+.done { align-items: center; text-align: center; }
+.done .check { width: 76px; height: 76px; border-radius: 50%; background: var(--green-50); color: var(--green-600); display: grid; place-items: center; }
+.done .check svg { width: 38px; height: 38px; }
+
+/* ---------- Consultorio ---------- */
+.app { display: none; min-height: calc(100vh - 56px); grid-template-columns: 248px minmax(0, 1fr); }
+.side { background: var(--white); border-right: 1px solid var(--line); padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; }
+.brand { display: flex; gap: 10px; align-items: center; padding: 4px 8px 20px; }
+.brand .avatar { width: 40px; height: 40px; font-size: 15px; }
+.brand b { display: block; font-size: 15px; }
+.brand span { display: block; font-size: 12px; color: var(--ink-500); }
+.nav-i { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; border: 0; background: none; font-size: 15px; font-weight: 600; color: var(--ink-700); text-align: left; }
+.nav-i svg { width: 20px; height: 20px; color: var(--ink-500); }
+.nav-i:hover { background: var(--bg-soft); }
+.nav-i.on { background: var(--blue-50); color: var(--blue-700); }
+.nav-i.on svg { color: var(--blue-600); }
+.nav-i .count { margin-left: auto; font-size: 12px; background: var(--orange-600); color: var(--white); border-radius: 999px; padding: 1px 8px; }
+.side .spacer { flex: 1; }
+
+.main { padding: 28px 36px 48px; display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.topbar { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; }
+.topbar h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; }
+.topbar .sub { color: var(--ink-500); font-size: 14px; margin-top: 2px; }
+.daynav { display: flex; gap: 8px; align-items: center; }
+.icon-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--white); display: grid; place-items: center; color: var(--ink-700); }
+.icon-btn svg { width: 18px; height: 18px; }
+.date-btn { display: inline-flex; gap: 8px; align-items: center; height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--white); font-weight: 600; font-size: 14px; }
+.date-btn svg { width: 16px; height: 16px; color: var(--blue-600); }
+.btn { display: inline-flex; gap: 8px; align-items: center; height: 40px; padding: 0 16px; border-radius: 10px; border: 0; font-weight: 700; font-size: 14px; }
+.btn svg { width: 18px; height: 18px; }
+.btn.wa { background: var(--green-600); color: var(--white); }
+.btn.ghost { background: var(--white); border: 1px solid var(--line); color: var(--ink-700); }
+
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.kpi span { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-500); font-weight: 600; }
+.kpi b { display: block; font-size: 26px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.d-conf { background: var(--blue-600); } .d-pend { background: var(--ink-300); } .d-canc { background: var(--orange-600); } .d-att { background: var(--green-600); }
+
+.sched { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.sched-head { display: grid; grid-template-columns: 76px minmax(0, 1fr) 150px 170px; gap: 16px; padding: 10px 18px; background: var(--bg-soft); border-bottom: 1px solid var(--line); font-size: 12px; font-weight: 700; color: var(--ink-500); text-transform: uppercase; letter-spacing: .06em; }
+.srow { display: grid; grid-template-columns: 76px minmax(0, 1fr) 150px 170px; gap: 16px; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.srow:last-child { border-bottom: 0; }
+.srow:hover { background: #FAFBFD; }
+.srow.now { box-shadow: inset 3px 0 0 var(--blue-600); }
+.t { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-900); }
+.srow.now .t { color: var(--blue-600); }
+.person { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.ini { width: 36px; height: 36px; border-radius: 50%; background: var(--blue-50); color: var(--blue-700); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
+.person b { display: block; font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.person span { display: block; font-size: 13px; color: var(--ink-500); font-variant-numeric: tabular-nums; }
+.person .sent { color: var(--green-600); font-weight: 600; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.p-conf { background: var(--blue-50); color: var(--blue-700); }
+.p-pend { background: var(--bg-soft); color: var(--ink-700); border: 1px solid var(--line); }
+.p-canc { background: var(--orange-50); color: #B54708; }
+.p-att { background: var(--green-50); color: var(--green-600); }
+.acts { display: flex; gap: 6px; justify-content: flex-end; }
+.a-btn { height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--white); font-size: 13px; font-weight: 600; color: var(--ink-700); display: inline-flex; align-items: center; gap: 6px; }
+.a-btn svg { width: 16px; height: 16px; }
+.a-btn.att { background: var(--green-600); border-color: var(--green-600); color: var(--white); }
+.a-btn.only { width: 34px; padding: 0; justify-content: center; }
+.free { color: var(--ink-300); font-size: 14px; font-style: italic; }
+.add { height: 32px; padding: 0 12px; border-radius: 8px; border: 1px dashed var(--ink-300); background: none; color: var(--blue-600); font-weight: 600; font-size: 13px; }
+.srow.cancel b { text-decoration: line-through; color: var(--ink-500); }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .side { flex-direction: row; overflow-x: auto; padding: 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .brand, .side .spacer { display: none; }
+  .main { padding: 20px 16px 40px; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sched-head { display: none; }
+  .srow { grid-template-columns: 56px minmax(0, 1fr); }
+  .srow > .status, .srow > .acts { grid-column: 2; justify-content: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<div class="switcher" role="tablist">
+  <button type="button" class="on" data-view="patient">Lo que ve el paciente</button>
+  <button type="button" data-view="clinic">Panel del consultorio</button>
+</div>
+<p class="note">Propuesta de diseño con datos de ejemplo. Nada de esta página está conectado.</p>
+
+<section class="patient" id="v-patient">
+  <div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">AA</div>
+        <div class="who">
+          <b>Dr. Alejandro Alba</b>
+          <span>Medicina Familiar · Consultorio 8</span>
+          <span class="badge-ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Consultorio verificado</span>
+        </div>
+      </div>
+      <div class="p-body">
+        <div>
+          <h1>Su cita médica</h1>
+          <p class="lead" style="margin-top:6px">Por favor confírmela para que el doctor le espere.</p>
+        </div>
+        <div class="appt">
+          <div class="appt-top">
+            <div class="datebox"><small>Mar</small><b>17</b><small>Nov</small></div>
+            <div class="when">
+              <b>Martes 17 de noviembre</b>
+              <span class="appt-time">8:30 a. m.</span>
+            </div>
+          </div>
+          <div class="appt-meta">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            María Elena López Torres
+          </div>
+        </div>
+        <div class="stack">
+          <button type="button" class="cta primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            Confirmar mi cita
+          </button>
+          <button type="button" class="cta secondary">No podré asistir</button>
+        </div>
+        <p class="fine">Si cancela, su lugar se le dará a otro paciente.</p>
+      </div>
+    </div>
+    <p class="phone-cap">1. Al abrir el link de WhatsApp</p>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">AA</div>
+        <div class="who">
+          <b>Dr. Alejandro Alba</b>
+          <span>Medicina Familiar · Consultorio 8</span>
+        </div>
+      </div>
+      <div class="p-body done">
+        <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <div>
+          <h1>Cita confirmada</h1>
+          <p class="lead" style="margin-top:8px">Le esperamos el martes 17 de noviembre a las 8:30 a. m.</p>
+        </div>
+        <div class="appt" style="width:100%;text-align:left">
+          <div class="appt-top">
+            <div class="datebox"><small>Mar</small><b>17</b><small>Nov</small></div>
+            <div class="when"><b>8:30 a. m.</b><span>Consultorio 8</span></div>
+          </div>
+        </div>
+        <p class="fine">Puede cerrar esta página.</p>
+      </div>
+    </div>
+    <p class="phone-cap">2. Después de confirmar</p>
+  </div>
+</section>
+
+<section class="app" id="v-clinic">
+  <aside class="side">
+    <div class="brand"><div class="avatar">AA</div><div><b>Dr. Alejandro Alba</b><span>Consultorio 8</span></div></div>
+    <button type="button" class="nav-i on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Agenda<span class="count">3</span></button>
+    <button type="button" class="nav-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Cargar citas</button>
+    <button type="button" class="nav-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Pacientes</button>
+    <button type="button" class="nav-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20v.01M20 20h.01M17 17h3v3"/></svg>Cartel con QR</button>
+    <div class="spacer"></div>
+    <button type="button" class="nav-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Salir</button>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Martes 17 de noviembre</h1>
+        <p class="sub">24 lugares · 8 citas · de 8:00 a 14:00</p>
+      </div>
+      <div class="daynav">
+        <button type="button" class="icon-btn" aria-label="Día anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button type="button" class="date-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Hoy, 17 nov</button>
+        <button type="button" class="icon-btn" aria-label="Día siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+        <button type="button" class="btn wa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>Enviar WhatsApp (3)</button>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><span><i class="dot d-conf"></i>Confirmados</span><b>3</b></div>
+      <div class="kpi"><span><i class="dot d-pend"></i>Sin confirmar</span><b>3</b></div>
+      <div class="kpi"><span><i class="dot d-canc"></i>Cancelados</span><b>1</b></div>
+      <div class="kpi"><span><i class="dot d-att"></i>Atendidos</span><b>1</b></div>
+    </div>
+
+    <div class="sched">
+      <div class="sched-head"><span>Hora</span><span>Paciente</span><span>Estado</span><span style="text-align:right">Acciones</span></div>
+      <div class="srow"><span class="t">8:00</span><div class="person"><span class="ini">RH</span><div><b>Rosa María Hernández Cruz</b><span>81 1510 9653 · <span class="sent">enviado</span></span></div></div><div class="status"><span class="pill p-att"><i class="dot d-att"></i>Atendido</span></div><div class="acts"><button type="button" class="a-btn">Deshacer</button><button type="button" class="a-btn only" aria-label="Más">⋮</button></div></div>
+      <div class="srow now"><span class="t">8:15</span><div class="person"><span class="ini">JM</span><div><b>José Luis Martínez Pérez</b><span>81 1290 1546 · <span class="sent">enviado</span></span></div></div><div class="status"><span class="pill p-conf"><i class="dot d-conf"></i>Confirmado</span></div><div class="acts"><button type="button" class="a-btn att">Atendido</button><button type="button" class="a-btn only" aria-label="Más">⋮</button></div></div>
+      <div class="srow"><span class="t">8:30</span><div class="person"><span class="ini">ML</span><div><b>María Elena López Torres</b><span>81 2233 4455</span></div></div><div class="status"><span class="pill p-pend"><i class="dot d-pend"></i>Sin confirmar</span></div><div class="acts"><button type="button" class="a-btn only" aria-label="WhatsApp" style="color:var(--green-600)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg></button><button type="button" class="a-btn att">Atendido</button><button type="button" class="a-btn only" aria-label="Más">⋮</button></div></div>
+      <div class="srow cancel"><span class="t">8:45</span><div class="person"><span class="ini" style="background:var(--orange-50);color:#B54708">FG</span><div><b>Francisco Javier Gómez Ruiz</b><span>81 9988 7766</span></div></div><div class="status"><span class="pill p-canc"><i class="dot d-canc"></i>Cancelado</span></div><div class="acts"><button type="button" class="a-btn only" aria-label="Más">⋮</button></div></div>
+      <div class="srow"><span class="t">9:00</span><div class="person"><span class="free">Libre</span></div><div class="status"></div><div class="acts"><button type="button" class="add">+ Agregar paciente</button></div></div>
+      <div class="srow"><span class="t">9:15</span><div class="person"><span class="ini">GS</span><div><b>Guadalupe Sánchez Rivera</b><span style="color:var(--orange-600)">Sin teléfono</span></div></div><div class="status"><span class="pill p-conf"><i class="dot d-conf"></i>Confirmado</span></div><div class="acts"><button type="button" class="a-btn att">Atendido</button><button type="button" class="a-btn only" aria-label="Más">⋮</button></div></div>
+      <div class="srow"><span class="t">9:30</span><div class="person"><span class="ini">AF</span><div><b>Antonio Flores Mendoza</b><span>81 5544 3322</span></div></div><div class="status"><span class="pill p-pend"><i class="dot d-pend"></i>Sin confirmar</span></div><div class="acts"><button type="button" class="a-btn only" aria-label="WhatsApp" style="color:var(--green-600)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg></button><button type="button" class="a-btn att">Atendido</button><button type="button" class="a-btn only" aria-label="Más">⋮</button></div></div>
+      <div class="srow"><span class="t">9:45</span><div class="person"><span class="free">Libre</span></div><div class="status"></div><div class="acts"><button type="button" class="add">+ Agregar paciente</button></div></div>
+    </div>
+  </main>
+</section>
+
+<script>
+document.querySelectorAll("[data-view]").forEach(function (button) {
+  button.addEventListener("click", function () {
+    document.querySelectorAll("[data-view]").forEach(function (b) { b.classList.toggle("on", b === button); });
+    document.getElementById("v-patient").style.display = button.dataset.view === "patient" ? "flex" : "none";
+    document.getElementById("v-clinic").style.display = button.dataset.view === "clinic" ? "grid" : "none";
+  });
+});
+</script>
+</body>
+</html>
