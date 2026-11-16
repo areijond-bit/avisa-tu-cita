@@ -237,3 +237,185 @@ grant execute on function public.entrar_consultorio(text) to anon, authenticated
 grant execute on function public.agenda_dia(text, date) to anon, authenticated;
 grant execute on function public.marcar_cita(text, uuid, text) to anon, authenticated;
 grant execute on function public.guardar_citas(text, jsonb) to anon, authenticated;
+-- ============================================================
+-- PACIENTES Y WHATSAPP
+-- Directorio de pacientes con teléfono. Si dos se llaman igual, "num" los distingue
+-- (Juan Pérez (1), Juan Pérez (2)); eso solo lo ve el consultorio.
+-- Cada cita tiene un "token": el link personal que se manda por WhatsApp.
+-- ============================================================
+create table if not exists public.pacientes (
+  id         uuid primary key default gen_random_uuid(),
+  nombre     text not null,
+  num        int not null default 1,
+  telefono   text,
+  creado_en  timestamptz not null default now()
+);
+create unique index if not exists pacientes_nombre_num on public.pacientes (public.norm_txt(nombre), num);
+alter table public.pacientes enable row level security;
+revoke all on public.pacientes from anon, authenticated;
+
+alter table public.citas add column if not exists paciente_id uuid references public.pacientes (id) on delete set null;
+alter table public.citas add column if not exists token uuid not null default gen_random_uuid();
+alter table public.citas add column if not exists enviado_en timestamptz;
+create unique index if not exists citas_token on public.citas (token);
+
+-- Siguiente número libre para un nombre (1 si nadie se llama así)
+create or replace function public.siguiente_num(p_nombre text, p_sin uuid default null)
+returns int
+language sql stable security definer set search_path = public
+as $$
+  select coalesce(max(num), 0) + 1 from public.pacientes
+   where public.norm_txt(nombre) = public.norm_txt(p_nombre) and (p_sin is null or id <> p_sin);
+$$;
+revoke all on function public.siguiente_num(text, uuid) from public, anon, authenticated;
+
+-- Paciente: abrir su cita desde el link de WhatsApp
+create or replace function public.cita_por_token(p_token uuid)
+returns table (id uuid, fecha date, hora time, nombre text, estado text)
+language sql stable security definer set search_path = public
+as $$
+  select c.id, c.fecha, c.hora, coalesce(p.nombre, c.nombre), c.estado
+    from public.citas c left join public.pacientes p on p.id = c.paciente_id
+   where c.token = p_token
+     and c.fecha >= (now() at time zone 'America/Mexico_City')::date;
+$$;
+revoke all on function public.cita_por_token(uuid) from public;
+grant execute on function public.cita_por_token(uuid) to anon, authenticated;
+
+create or replace function public.agenda_dia(p_clave text, p_fecha date)
+returns jsonb
+language plpgsql volatile security definer set search_path = public
+as $$
+begin
+  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
+  return jsonb_build_object('ok', true, 'citas', coalesce((
+    select jsonb_agg(jsonb_build_object(
+             'id', c.id, 'fecha', c.fecha, 'hora', to_char(c.hora, 'HH24:MI'),
+             'nombre', coalesce(p.nombre, c.nombre), 'estado', c.estado, 'aviso_en', c.aviso_en,
+             'token', c.token, 'enviado_en', c.enviado_en, 'paciente_id', c.paciente_id,
+             'telefono', p.telefono, 'num', p.num,
+             'dup', (select count(*) from public.pacientes p2 where public.norm_txt(p2.nombre) = public.norm_txt(p.nombre))
+           ) order by c.hora)
+      from public.citas c left join public.pacientes p on p.id = c.paciente_id
+     where c.fecha = p_fecha), '[]'::jsonb));
+end;
+$$;
+
+-- Guarda la lista de un día. Liga cada nombre con su paciente (o lo da de alta)
+-- y conserva avisos, links y mensajes ya enviados de quien ya estaba en la lista.
+create or replace function public.guardar_citas(p_clave text, p_citas jsonb)
+returns jsonb
+language plpgsql volatile security definer set search_path = public
+as $$
+declare
+  viejas jsonb;
+  fechas date[];
+  r jsonb;
+  nm text;
+  pid uuid;
+  n int;
+begin
+  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
+  fechas := array(select distinct (x ->> 'fecha')::date from jsonb_array_elements(p_citas) x);
+  select coalesce(jsonb_agg(to_jsonb(c)), '[]'::jsonb) into viejas from public.citas c where c.fecha = any (fechas);
+  delete from public.citas where fecha = any (fechas);
+
+  for r in select * from jsonb_array_elements(p_citas) loop
+    nm := trim(coalesce(r ->> 'nombre', ''));
+    continue when nm = '';
+    pid := nullif(r ->> 'paciente_id', '')::uuid;
+    if pid is null and not coalesce((r ->> 'nuevo')::boolean, false) then
+      select count(*) into n from public.pacientes p where public.norm_txt(p.nombre) = public.norm_txt(nm);
+      if n = 1 then select p.id into pid from public.pacientes p where public.norm_txt(p.nombre) = public.norm_txt(nm); end if;
+    end if;
+    if pid is null then
+      insert into public.pacientes (nombre, num) values (nm, public.siguiente_num(nm)) returning id into pid;
+    end if;
+
+    insert into public.citas (fecha, hora, nombre, paciente_id, estado, aviso_en, token, enviado_en)
+    select (r ->> 'fecha')::date, (r ->> 'hora')::time, nm, pid,
+           coalesce(v.estado, 'pendiente'), v.aviso_en, coalesce(v.token, gen_random_uuid()), v.enviado_en
+      from (select 1) uno
+      left join lateral (
+        select * from jsonb_to_recordset(viejas)
+          as v(fecha date, nombre text, paciente_id uuid, estado text, aviso_en timestamptz, token uuid, enviado_en timestamptz)
+         where v.fecha = (r ->> 'fecha')::date
+           and (v.paciente_id = pid or (v.paciente_id is null and public.norm_txt(v.nombre) = public.norm_txt(nm)))
+           and not exists (select 1 from public.citas c2 where c2.token = v.token)
+         limit 1
+      ) v on true;
+  end loop;
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.marcar_enviado(p_clave text, p_id uuid)
+returns jsonb
+language plpgsql volatile security definer set search_path = public
+as $$
+begin
+  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
+  update public.citas set enviado_en = now() where id = p_id;
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.pacientes_lista(p_clave text)
+returns jsonb
+language plpgsql volatile security definer set search_path = public
+as $$
+begin
+  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
+  return jsonb_build_object('ok', true, 'pacientes', coalesce((
+    select jsonb_agg(jsonb_build_object(
+             'id', p.id, 'nombre', p.nombre, 'num', p.num, 'telefono', p.telefono,
+             'dup', (select count(*) from public.pacientes p2 where public.norm_txt(p2.nombre) = public.norm_txt(p.nombre))
+           ) order by public.norm_txt(p.nombre), p.num)
+      from public.pacientes p), '[]'::jsonb));
+end;
+$$;
+
+-- Alta o cambio de un paciente. Con p_cita, además liga esa cita con el paciente.
+create or replace function public.paciente_guardar(p_clave text, p_id uuid, p_nombre text, p_telefono text, p_cita uuid default null)
+returns jsonb
+language plpgsql volatile security definer set search_path = public
+as $$
+declare
+  nm text := trim(coalesce(p_nombre, ''));
+  tel text := nullif(regexp_replace(coalesce(p_telefono, ''), '\D', '', 'g'), '');
+  pid uuid := p_id;
+  antes text;
+begin
+  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
+  if length(nm) < 2 then return jsonb_build_object('ok', true, 'error', 'Falta el nombre.'); end if;
+  if pid is null then
+    insert into public.pacientes (nombre, num, telefono) values (nm, public.siguiente_num(nm), tel) returning id into pid;
+  else
+    select nombre into antes from public.pacientes where id = pid;
+    update public.pacientes
+       set nombre = nm, telefono = tel,
+           num = case when public.norm_txt(antes) = public.norm_txt(nm) then num else public.siguiente_num(nm, pid) end
+     where id = pid;
+  end if;
+  if p_cita is not null then
+    update public.citas set paciente_id = pid where id = p_cita;
+  end if;
+  return jsonb_build_object('ok', true, 'id', pid);
+end;
+$$;
+
+create or replace function public.paciente_borrar(p_clave text, p_id uuid)
+returns jsonb
+language plpgsql volatile security definer set search_path = public
+as $$
+begin
+  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
+  delete from public.pacientes where id = p_id;
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+grant execute on function public.marcar_enviado(text, uuid) to anon, authenticated;
+grant execute on function public.pacientes_lista(text) to anon, authenticated;
+grant execute on function public.paciente_guardar(text, uuid, text, text, uuid) to anon, authenticated;
+grant execute on function public.paciente_borrar(text, uuid) to anon, authenticated;

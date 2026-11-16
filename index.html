@@ -232,6 +232,68 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 .del { width: 44px; height: 44px; border: 0; background: none; color: var(--muted); font-size: 28px; line-height: 1; border-radius: 10px; }
 .del:hover { background: var(--orange-tint); color: var(--orange-ink); }
 @media (max-width: 600px) { .erow { grid-template-columns: 26px 52px minmax(0, 1fr) 40px; gap: 8px; padding: 8px; } .erow .ehr { font-size: 14px; } }
+
+/* cargar: foto o pegar */
+.pick2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 760px; }
+.pick2 .btn-xl { cursor: pointer; font-size: 22px; }
+@media (max-width: 600px) { .pick2 { grid-template-columns: 1fr; } }
+.pastebox { display: flex; flex-direction: column; gap: 10px; border: 2px dashed var(--blue); border-radius: 14px; padding: 16px; background: var(--blue-tint); }
+.pastebox textarea { background: var(--white); min-height: 160px; }
+/* renglones editables con hora */
+.erow { grid-template-columns: 32px 108px minmax(0, 1fr) auto; align-items: start; }
+.erow .num { padding-top: 12px; }
+.hsel { min-height: 46px; padding: 6px 8px; border: 2px solid var(--line); border-radius: 10px; font-family: var(--mono); font-weight: 700; font-size: 17px; color: var(--blue); background: var(--white); width: 100%; }
+.hsel.missing { border-color: var(--orange); background: var(--orange-tint); }
+.erow.clash { background: #FDECEA; }
+.erow.clash .hsel { border-color: var(--error); color: var(--error); background: var(--white); }
+.erow.clash .eprob { color: var(--error); }
+.ecol { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.emeta { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 14px; }
+.eprob { color: var(--orange-ink); font-weight: 700; }
+.known { display: inline-flex; gap: 4px; align-items: center; color: var(--muted); }
+.known svg.i { width: 14px; height: 14px; color: var(--blue); }
+.known.new { color: var(--blue); font-weight: 700; }
+.who-pick { padding: 6px 8px; border: 2px solid var(--line); border-radius: 8px; font-size: 15px; background: var(--white); max-width: 100%; }
+.who-pick.missing { border-color: var(--orange); background: var(--orange-tint); }
+.eacts { display: flex; align-items: center; gap: 2px; }
+.mini-link { background: none; border: 0; color: var(--blue); font-weight: 700; font-size: 14px; padding: 8px 6px; text-decoration: underline; text-underline-offset: 3px; }
+.red { color: var(--error); }
+@media (max-width: 600px) {
+  .erow { grid-template-columns: 24px 92px minmax(0, 1fr); }
+  .erow .ecol { grid-column: 1 / -1; }
+  .erow .eacts { grid-column: 3; grid-row: 1; justify-content: flex-end; }
+}
+/* agenda: teléfonos y WhatsApp */
+.numtag { color: var(--orange-ink); font-weight: 800; }
+.row .meta { font-family: var(--font); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.telbtn { display: inline-flex; gap: 6px; align-items: center; background: none; border: 0; padding: 2px 0; color: var(--muted); font-size: 15px; font-family: var(--mono); }
+.telbtn svg.i { width: 15px; height: 15px; }
+.telbtn.add { color: var(--blue); font-family: var(--font); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.sent { display: inline-flex; gap: 3px; align-items: center; color: var(--blue); font-size: 14px; font-weight: 700; }
+.sent svg.i { width: 14px; height: 14px; }
+.mbtn.wa, .sbtn.wa { background: #1F8A4C; color: #fff; border-color: #1F8A4C; display: inline-flex; gap: 8px; align-items: center; text-decoration: none; }
+.mbtn.wa:hover, .sbtn.wa:hover { background: #176B3A; }
+.sbtn.wa { padding: 7px 10px; }
+.sbtn.wa svg.i, .mbtn.wa svg.i { width: 18px; height: 18px; }
+.sendbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.send { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; border: 2px solid #1F8A4C; border-radius: 14px; padding: 14px 18px; background: #EAF6EF; }
+.send > div:first-child { display: flex; flex-direction: column; }
+.send b { font-size: 20px; }
+.telform { display: flex; flex-direction: column; gap: 8px; padding: 14px 18px; background: var(--soft); border-top: 1px solid var(--line); }
+.telform label { font-weight: 700; }
+.telform .ein { max-width: 220px; font-family: var(--mono); }
+/* pacientes */
+.prow { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 18px; border-top: 1px solid var(--line); }
+.prow:first-child { border-top: 0; }
+.prow .name { font-weight: 700; overflow-wrap: anywhere; }
+.prow .meta { display: flex; gap: 6px; align-items: center; color: var(--muted); font-family: var(--mono); font-size: 15px; }
+.prow .meta svg.i { width: 15px; height: 15px; }
+.nophone { font-family: var(--font); color: var(--orange-ink); font-weight: 700; }
+.pform { display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; background: var(--soft); border: 2px solid var(--blue); border-radius: 14px; margin: 8px; }
+.pform .field label { font-size: 17px; }
+.pform .ein { max-width: 420px; }
+.link.danger { color: var(--error); }
+#pq { max-width: 480px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -240,19 +302,22 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 <script>
 (function () {
   // ======== CONFIGURACIÓN ========
-  // Datos de Supabase (Project Settings → API). Si están vacíos, la página funciona en modo de prueba.
   const CONFIG = { url: "https://soijjnyeiziokkegzrmn.supabase.co", key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvaWpqbnllaXppb2trZWd6cm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ4MDEzODgsImV4cCI6MjExMDM3NzM4OH0.Y_DJAtGIL3APekJzg0YfVDsfN-7_6Y0SM0xYYMAKmEA" };
-  const CLINIC = { doctor: "Dr. Alejandro Alba", lugar: "Medicina Familiar · Consultorio 8", tel: "55 1234 5678" };
+  const CLINIC = { doctor: "Dr. Alejandro Alba", lugar: "Medicina Familiar · Consultorio 8", consultorio: "Consultorio 8" };
+  const SITE_URL = "https://areijond-bit.github.io/avisa-tu-cita/";
   // Horario de consulta: de 8:00 a 14:00, una consulta cada 15 minutos (24 lugares)
   const HORARIO = { inicio: 8 * 60, fin: 14 * 60, cada: 15 };
-  const PIN_PRUEBA = "1234";
+  // Horas que se pueden escoger a mano (un poco antes y después del horario)
+  const ELEGIBLES = { inicio: 7 * 60, fin: 16 * 60 };
   // ===============================
 
-  const REAL = !!(CONFIG.url && CONFIG.key && window.supabase);
-  const sb = REAL ? window.supabase.createClient(CONFIG.url, CONFIG.key) : null;
-  const KEY = "avisa-cita-demo-v4";
-  const SLOTS = [];
-  for (let m = HORARIO.inicio; m < HORARIO.fin; m += HORARIO.cada) SLOTS.push(String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"));
+  const sb = window.supabase.createClient(CONFIG.url, CONFIG.key);
+  const KEY = "avisa-cita-v5";
+  const pad = n => String(n).padStart(2, "0");
+  const hhmm = m => pad(Math.floor(m / 60)) + ":" + pad(m % 60);
+  const SLOTS = [], HORAS = [];
+  for (let m = HORARIO.inicio; m < HORARIO.fin; m += HORARIO.cada) SLOTS.push(hhmm(m));
+  for (let m = ELEGIBLES.inicio; m < ELEGIBLES.fin; m += HORARIO.cada) HORAS.push(hhmm(m));
 
   // ---------- íconos ----------
   const ICON = {
@@ -264,14 +329,15 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     cal: '<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="3" y1="10" x2="21" y2="10"/>',
     clock: '<circle cx="12" cy="12" r="9.5"/><polyline points="12 7 12 12 15.5 14"/>',
     phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
+    chat: '<path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/>',
+    paste: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/>',
     camera: '<path d="M22 18.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2h3.5l2-3h5l2 3H20a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
     alert: '<circle cx="12" cy="12" r="9.5"/><line x1="12" y1="7.5" x2="12" y2="12.5"/><line x1="12" y1="16.5" x2="12" y2="16.5"/>'
   };
   const ic = n => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + ICON[n] + '</svg>';
   const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3h5v6.5H21v5h-6.5V21h-5v-6.5H3v-5h6.5z" fill="#fff"/></svg>';
 
-  // ---------- fechas ----------
-  const pad = n => String(n).padStart(2, "0");
+  // ---------- fechas y textos ----------
   const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
   const fromYmd = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
   const today = () => ymd(new Date());
@@ -280,133 +346,63 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     const t = fromYmd(s).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     return t.charAt(0).toUpperCase() + t.slice(1);
   };
-  const ampm = hhmm => {
-    const [h, m] = hhmm.split(":").map(Number);
-    return (h % 12 === 0 ? 12 : h % 12) + ":" + pad(m) + " " + (h < 12 ? "a. m." : "p. m.");
-  };
+  const ampm = h => { const [a, b] = h.split(":").map(Number); return (a % 12 === 0 ? 12 : a % 12) + ":" + pad(b) + " " + (a < 12 ? "a. m." : "p. m."); };
   const clock = iso => { const d = new Date(iso); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
   const nowHHMM = () => { const d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
-  const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
-  const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  const norm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  const titleCase = s => s.toLowerCase().replace(/(^|\s)(\S)/g, (a, b, c) => b + c.toUpperCase());
+  const telDigits = t => (t || "").replace(/\D/g, "");
+  const telShow = t => { const d = telDigits(t).slice(-10); return d.length === 10 ? d.slice(0, 2) + " " + d.slice(2, 6) + " " + d.slice(6) : t || ""; };
+  const telWa = t => { const d = telDigits(t); return d.length === 10 ? "52" + d : d; };
+  const numTag = p => p && p.dup > 1 ? ' <span class="numtag">(' + p.num + ')</span>' : '';
 
-  // ---------- almacén de prueba (solo este dispositivo) ----------
-  function sample() {
-    const t = today(), m = addDays(t, 1);
-    const ago = min => new Date(Date.now() - min * 60000).toISOString();
-    const hoy = [
-      ["Rosa María Hernández Cruz", "2821", "llego", ago(130)], ["José Luis Martínez Pérez", "3347", "camino", ago(15)],
-      ["María Elena López Torres", "4821", "pendiente", null], ["Francisco Javier Gómez Ruiz", "2955", "no_va", ago(240)],
-      ["Guadalupe Sánchez Rivera", "9163", "camino", ago(6)], ["Antonio Flores Mendoza", "1472", "pendiente", null],
-      ["Carmen Ortiz Vargas", "7738", "pendiente", null], ["Manuel Castillo Reyes", "5519", "pendiente", null],
-      ["Juana Ramírez Aguilar", "6611", "camino", ago(40)], ["Pedro Navarro Salinas", "5284", "pendiente", null],
-      ["Leticia Domínguez Ríos", "9902", "pendiente", null], ["Alfonso Medina Rojas", "3376", "no_va", ago(90)],
-      ["Silvia Guerrero Peña", "8140", "pendiente", null], ["Raúl Cortés Fuentes", "2265", "pendiente", null],
-      ["Martha Alicia Ríos León", "1593", "pendiente", null], ["Héctor Vázquez Ibarra", "4418", "pendiente", null],
-      ["Josefina Campos Luna", "7027", "camino", ago(3)], ["Ernesto Silva Montes", "5631", "pendiente", null],
-      ["Dolores Estrada Cano", "8854", "pendiente", null], ["Jorge Alberto Rosas Soto", "4769", "pendiente", null],
-      ["Yolanda Mejía Paredes", "1382", "pendiente", null], ["Salvador Ochoa Bravo", "2917", "pendiente", null],
-      ["Irma Contreras Vega", "9046", "pendiente", null], ["Arturo Pineda Lara", "3558", "pendiente", null]
-    ];
-    const manana = [["Teresa Morales Jiménez", "1204"], ["Roberto Díaz Herrera", "8830"], ["Gloria Andrade Serrano", "3426"], ["Ramón Juárez Olvera", "4537"]];
-    return hoy.map((r, i) => [t, SLOTS[i], ...r]).concat(manana.map((r, i) => [m, SLOTS[i], r[0], r[1], "pendiente", null]))
-      .map(([fecha, hora, nombre, nss4, estado, avisoEn]) => ({ id: fecha + "|" + hora, fecha, hora, nombre, estado, avisoEn }));
+  // ---------- conexión ----------
+  const rpc = async (fn, args) => { const { data, error } = await sb.rpc(fn, args); if (error) throw error; return data; };
+  const clave = () => { try { return localStorage.getItem(KEY + "-clave") || ""; } catch (e) { return ""; } };
+  async function staff(fn, args) {
+    const r = await rpc(fn, Object.assign({ p_clave: clave() }, args || {}));
+    if (!r || r.ok !== true) { salir(); throw new Error("clave"); }
+    return r;
   }
-  let mem = null;
-  const dload = () => { try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch (e) {} if (!mem) mem = { citas: sample() }; return mem; };
-  const dsave = db => { mem = db; try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
-  const pub = c => ({ id: c.id, fecha: c.fecha, hora: c.hora, nombre: c.nombre, estado: c.estado });
-
-  const Demo = {
-    async buscar(q) {
-      const words = norm(q).split(/\s+/).filter(w => w.length >= 2), t = today();
-      return dload().citas.filter(c => c.fecha >= t && words.every(w => norm(c.nombre).split(/\s+/).some(n => n.startsWith(w))))
-        .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora)).slice(0, 3).map(pub);
-    },
-    async avisar(id, estado) {
-      const db = dload(), c = db.citas.find(x => x.id === id);
-      if (!c || c.estado === "llego") return null;
-      c.estado = estado; c.avisoEn = new Date().toISOString(); dsave(db); return estado;
-    },
-    async sesion() { try { return sessionStorage.getItem(KEY + "-pin") === "ok"; } catch (e) { return false; } },
-    async entrar(pass) { if (pass !== PIN_PRUEBA) return false; try { sessionStorage.setItem(KEY + "-pin", "ok"); } catch (e) {} return true; },
-    async salir() { try { sessionStorage.removeItem(KEY + "-pin"); } catch (e) {} },
-    async dia(day) { return dload().citas.filter(c => c.fecha === day).sort((a, b) => a.hora.localeCompare(b.hora)); },
-    async marcar(id, estado) { const db = dload(), c = db.citas.find(x => x.id === id); if (c) { c.estado = estado; c.avisoEn = new Date().toISOString(); dsave(db); } },
-    async guardar(rows) {
-      const db = dload(), days = new Set(rows.map(r => r.fecha));
-      const prev = new Map(db.citas.map(c => [c.fecha + "|" + c.hora + "|" + norm(c.nombre), c]));
-      db.citas = db.citas.filter(c => !days.has(c.fecha)).concat(rows.map(r => {
-        const id = r.fecha + "|" + r.hora, old = prev.get(id + "|" + norm(r.nombre));
-        return { id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, estado: old ? old.estado : "pendiente", avisoEn: old ? old.avisoEn : null };
-      }));
-      dsave(db);
-    },
-    escuchar(cb) { window.addEventListener("storage", e => { if (e.key === KEY) cb(); }); },
-    async reiniciar() { dsave({ citas: sample() }); }
-  };
-
-  // ---------- almacén real (Supabase) ----------
-  const fix = r => ({ id: r.id, fecha: r.fecha, hora: String(r.hora).slice(0, 5), nombre: r.nombre, estado: r.estado, avisoEn: r.aviso_en || null });
-  const ok = ({ data, error }) => { if (error) throw error; return data; };
-  const Real = {
-    async buscar(q) { return ok(await sb.rpc("buscar_cita", { p_nombre: q })).map(fix); },
-    async avisar(id, estado) { return ok(await sb.rpc("avisar_cita", { p_id: id, p_estado: estado })); },
-    // El consultorio entra con una contraseña que revisa la base de datos; este celular la recuerda
-    clave() { try { return localStorage.getItem(KEY + "-clave") || ""; } catch (e) { return ""; } },
-    async sesion() { const c = Real.clave(); return !!c && ok(await sb.rpc("entrar_consultorio", { p_clave: c })) === true; },
-    async entrar(pass) {
-      const good = ok(await sb.rpc("entrar_consultorio", { p_clave: pass })) === true;
-      if (good) { try { localStorage.setItem(KEY + "-clave", pass); } catch (e) {} }
-      return good;
-    },
-    async salir() { try { localStorage.removeItem(KEY + "-clave"); } catch (e) {} },
-    async conClave(fn, args) {
-      const r = ok(await sb.rpc(fn, Object.assign({ p_clave: Real.clave() }, args)));
-      if (!r || r.ok !== true) { await Real.salir(); adm.unlocked = false; renderAdmin(); throw new Error("clave"); }
-      return r;
-    },
-    async dia(day) { return (await Real.conClave("agenda_dia", { p_fecha: day })).citas.map(fix); },
-    async marcar(id, estado) { await Real.conClave("marcar_cita", { p_id: id, p_estado: estado }); },
-    async guardar(rows) { await Real.conClave("guardar_citas", { p_citas: rows }); },
-    // Revisa si hay avisos nuevos cada 10 segundos
-    escuchar(cb) { setInterval(() => { if (!document.hidden) cb(); }, 10000); }
-  };
-  const store = REAL ? Real : Demo;
+  function salir() { try { localStorage.removeItem(KEY + "-clave"); } catch (e) {} adm.unlocked = false; if (view === "adm") renderAdmin(); }
 
   const app = document.getElementById("app");
   const $ = id => document.getElementById(id);
   const on = (id, fn) => { const el = $(id); if (el) el.addEventListener("click", fn); };
   const busy = () => app.querySelectorAll("button").forEach(b => { b.disabled = true; });
   const NET = "No se pudo conectar. Revise su internet e intente de nuevo.";
+  const errBox = msg => msg ? '<div class="err" role="alert">' + ic("alert") + '<span>' + msg + '</span></div>' : '';
 
   function topBar(right) {
     return '<header class="top"><div class="wrap' + (view === "adm" ? " wide" : "") + '"><div class="mark">' + CROSS + '</div>' +
       '<div class="id"><span class="doc">' + CLINIC.doctor + '</span><span class="place">' + CLINIC.lugar + '</span></div>' +
       (right ? '<div class="right">' + right + '</div>' : '') + '</div></header>';
   }
-  const errBox = msg => msg ? '<div class="err" role="alert">' + ic("alert") + '<span>' + msg + '</span></div>' : '';
 
-  // ---------- paciente ----------
-  const fresh = () => ({ step: "inicio", q: "", found: [], sel: null, err: "" });
+  // =================== PACIENTE ===================
+  const fresh = () => ({ step: "inicio", q: "", found: [], sel: null, err: "", link: false });
   let pac = fresh();
+  const fixCita = r => ({ id: r.id, fecha: r.fecha, hora: String(r.hora).slice(0, 5), nombre: r.nombre, estado: r.estado });
 
   function renderPatient() {
     let h = topBar("") + '<main class="wrap">';
     const sel = pac.found.find(c => c.id === pac.sel);
-    if (pac.step === "inicio") {
-      h += '<div class="lead"><h1>¿Va a venir a su cita?</h1><p>Avísele al doctor si ya va en camino o si ya no puede venir.</p></div>' +
+    if (pac.step === "cargando") {
+      h += '<div class="lead"><h1>Buscando su cita…</h1></div>';
+    } else if (pac.step === "inicio") {
+      h += '<div class="lead"><h1>¿Va a venir a su cita?</h1><p>Avísele al doctor si ya va en camino o si ya no puede venir.</p></div>' + errBox(pac.err) +
         '<button class="btn-xl btn-blue" id="go-search" type="button">' + ic("search") + 'Buscar mi cita</button>';
     } else if (pac.step === "buscar") {
       h += '<div class="lead"><span class="step">Paso 1 de 2</span><h1>Buscar mi cita</h1></div>' +
         '<form class="stack" id="f-search" novalidate>' +
-        '<div class="field"><label for="q">Su nombre</label><span class="help">Nombre y apellido, como en su carnet</span>' +
+        '<div class="field"><label for="q">Su nombre y apellido</label><span class="help">Como aparece en su carnet</span>' +
         '<input class="input" id="q" autocomplete="name" autocapitalize="words" value="' + esc(pac.q) + '"></div>' +
-                errBox(pac.err) +
+        errBox(pac.err) +
         '<button class="btn-xl btn-blue" type="submit">' + ic("search") + 'Buscar</button>' +
-        '<button class="btn-xl btn-plain" type="button" id="back">' + ic("back") + 'Regresar</button>' +
-        (REAL ? '' : '<p class="tip">Prueba: escriba <b>María López</b>.</p>') + '</form>';
+        '<button class="btn-xl btn-plain" type="button" id="back">' + ic("back") + 'Regresar</button></form>';
     } else if (pac.step === "cita") {
-      h += '<div class="lead"><span class="step">Paso 2 de 2</span><h1>' + (pac.found.length > 1 ? "Sus citas" : "Su cita") + '</h1></div>' + errBox(pac.err);
+      h += '<div class="lead">' + (pac.link ? '' : '<span class="step">Paso 2 de 2</span>') + '<h1>' + (pac.found.length > 1 ? "Sus citas" : "Su cita") + '</h1></div>' + errBox(pac.err);
       pac.found.forEach(c => {
         h += '<section class="appt"><div class="who">' + esc(c.nombre) + '</div><div class="body">' +
           '<div class="line">' + ic("cal") + '<span class="date">' + longDay(c.fecha) + '</span></div>' +
@@ -417,12 +413,12 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
         h += '</div></section>';
         if (c.estado !== "llego") {
           h += '<div class="actions">';
-          if (c.estado !== "camino") h += '<button class="btn-xl btn-blue" type="button" data-camino="' + esc(c.id) + '">' + ic("go") + 'Voy en camino</button>';
+          if (c.estado !== "camino") h += '<button class="btn-xl btn-blue" type="button" data-camino="' + esc(c.id) + '">' + ic("go") + 'Sí voy / voy en camino</button>';
           if (c.estado !== "no_va") h += '<button class="btn-xl btn-orange-line" type="button" data-nova="' + esc(c.id) + '">' + ic("x") + 'Ya no voy a ir</button>';
           h += '</div>';
         }
       });
-      h += '<button class="btn-xl btn-plain" type="button" id="restart">' + ic("back") + 'Salir</button>';
+      if (!pac.link) h += '<button class="btn-xl btn-plain" type="button" id="restart">' + ic("back") + 'Salir</button>';
     } else if (pac.step === "confirmar_no") {
       h += '<div class="lead"><h1>¿Seguro que ya no va a venir?</h1><p>Su cita del ' + longDay(sel.fecha).toLowerCase() + ' a las ' + ampm(sel.hora) + ' se le dará a otro paciente.</p></div>' +
         errBox(pac.err) +
@@ -432,12 +428,10 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       const camino = sel.estado === "camino";
       h += '<div class="done"><div class="ok ' + (camino ? "blue" : "orange") + '">' + ic("check") + '</div>' +
         '<h1>Listo, ya le avisamos al doctor</h1>' +
-        '<p>' + (camino ? "Le esperan a las " + ampm(sel.hora) + ". Que tenga buen viaje." : "Gracias por avisar.") + '</p></div>' +
+        '<p>' + (camino ? "Le esperan el " + longDay(sel.fecha).toLowerCase() + " a las " + ampm(sel.hora) + "." : "Gracias por avisar.") + '</p></div>' +
         '<button class="btn-xl btn-plain" type="button" id="restart">Terminar</button>';
     }
-    h += '</main>';
-    if (!REAL) h += '<footer class="foot"><div class="wrap"><span>Versión de prueba con citas de ejemplo.</span><button class="link" type="button" id="to-adm">Entrar como consultorio</button></div></footer>';
-    app.innerHTML = h;
+    app.innerHTML = h + '</main>';
     window.scrollTo(0, 0);
     wirePatient();
   }
@@ -445,7 +439,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   async function avisar(id, estado) {
     busy();
     try {
-      const r = await store.avisar(id, estado);
+      const r = await rpc("avisar_cita", { p_id: id, p_estado: estado });
       if (!r) { pac.err = "Esta cita ya no se puede cambiar."; pac.step = "cita"; return renderPatient(); }
       pac.found.find(c => c.id === id).estado = r; pac.sel = id; pac.err = ""; pac.step = "listo";
     } catch (e) { pac.err = NET; }
@@ -453,10 +447,9 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   }
 
   function wirePatient() {
-    on("to-adm", () => go("adm"));
-    on("go-search", () => { pac.step = "buscar"; renderPatient(); $("q").focus(); });
+    on("go-search", () => { pac.step = "buscar"; pac.err = ""; renderPatient(); $("q").focus(); });
     on("back", () => { pac = fresh(); renderPatient(); });
-    on("restart", () => { pac = fresh(); renderPatient(); });
+    on("restart", () => { pac = fresh(); history.replaceState(null, "", location.pathname); renderPatient(); });
     on("cancel-no", () => { pac.step = "cita"; pac.err = ""; renderPatient(); });
     on("yes-no", () => avisar(pac.sel, "no_va"));
     app.querySelectorAll("[data-camino]").forEach(b => b.addEventListener("click", () => avisar(b.dataset.camino, "camino")));
@@ -466,10 +459,10 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     f.addEventListener("submit", async e => {
       e.preventDefault();
       pac.q = $("q").value;
-      if (norm(pac.q).split(/\s+/).filter(w => w.length >= 2).length < 2) { pac.err = "Escriba su nombre y su apellido."; return renderPatient(); }
+      if (norm(pac.q).split(" ").filter(w => w.length >= 2).length < 2) { pac.err = "Escriba su nombre y su apellido."; return renderPatient(); }
       busy();
       try {
-        const found = await store.buscar(pac.q);
+        const found = (await rpc("buscar_cita", { p_nombre: pac.q })).map(fixCita);
         if (!found.length) { pac.err = "No encontramos su cita. Revise que su nombre y apellido estén bien escritos."; return renderPatient(); }
         pac.err = ""; pac.found = found; pac.step = "cita";
       } catch (x) { pac.err = NET; }
@@ -477,55 +470,96 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     });
   }
 
-  // ---------- consultorio ----------
-  let adm = { unlocked: false, tab: "agenda", day: today(), list: null, loadErr: "", pasteText: "", pasteDay: today(), rows: null, ocr: null, showPaste: false, msg: "" };
+  // Link personal desde WhatsApp: ?c=<token>
+  async function abrirLink(token) {
+    pac.step = "cargando"; renderPatient();
+    try {
+      const found = (await rpc("cita_por_token", { p_token: token })).map(fixCita);
+      if (found.length) { pac.found = found; pac.link = true; pac.step = "cita"; }
+      else { pac.step = "inicio"; pac.err = "Este enlace ya no sirve. Busque su cita con su nombre."; }
+    } catch (e) { pac.step = "inicio"; pac.err = NET; }
+    renderPatient();
+  }
+
+  // =================== CONSULTORIO ===================
+  let adm = {
+    unlocked: false, tab: "agenda", day: today(), list: null, loadErr: "", msg: "",
+    pasteText: "", pasteDay: addDays(today(), 1), rows: null, ocr: null, showPaste: false,
+    pacientes: null, pq: "", pedit: null, editTel: null, envio: null
+  };
   const LABEL = { pendiente: "Sin avisar", camino: "En camino", no_va: "No va", llego: "Ya llegó" };
 
   async function loadDay() {
-    try { adm.list = await store.dia(adm.day); adm.loadErr = ""; }
-    catch (e) { adm.loadErr = "No se pudo cargar la agenda. Revise el internet."; }
-    if (view === "adm" && adm.unlocked && adm.tab === "agenda") renderAdmin();
+    try { adm.list = (await staff("agenda_dia", { p_fecha: adm.day })).citas; adm.loadErr = ""; }
+    catch (e) { if (e.message !== "clave") adm.loadErr = "No se pudo cargar la agenda. Revise el internet."; }
+    if (view === "adm" && adm.unlocked && adm.tab === "agenda" && !adm.editTel && !document.activeElement?.matches?.("input")) renderAdmin();
+  }
+  async function loadPacientes() {
+    try { adm.pacientes = (await staff("pacientes_lista")).pacientes; }
+    catch (e) { if (e.message !== "clave") adm.msg = "No se pudo cargar la lista de pacientes."; }
+    if (view === "adm" && adm.unlocked && (adm.tab === "pacientes" || adm.tab === "cargar")) renderAdmin();
   }
 
   function renderAdmin() {
-    const right = REAL ? (adm.unlocked ? '<button class="link" type="button" id="logout">Salir</button>' : '') : '<button class="link" type="button" id="to-pac">Ver como paciente</button>';
+    const right = adm.unlocked ? '<button class="link" type="button" id="logout">Salir</button>' : '';
     if (!adm.unlocked) {
       app.innerHTML = topBar(right) + '<main class="wrap lock"><div class="lead"><h1>Panel del consultorio</h1><p>Escriba la contraseña para entrar.</p></div>' +
-        '<form class="stack" id="f-login">' +
-        '<div class="field"><label for="pass">Contraseña</label><input class="input digits" id="pass" inputmode="numeric" type="password" autocomplete="current-password"></div>' +
-        errBox(adm.msg) +
-        '<button class="btn-xl btn-blue" type="submit">Entrar</button>' + (REAL ? '' : '<p class="tip">Contraseña de prueba: <b>1234</b></p>') + '</form></main>';
-      on("to-pac", () => go("pac"));
+        '<form class="stack" id="f-login"><div class="field"><label for="pass">Contraseña</label><input class="input digits" id="pass" inputmode="numeric" type="password" autocomplete="current-password"></div>' +
+        errBox(adm.msg) + '<button class="btn-xl btn-blue" type="submit">Entrar</button></form></main>';
       $("f-login").addEventListener("submit", async e => {
         e.preventDefault(); busy();
-        let okLogin = false, fallo = "Contraseña incorrecta. Intente de nuevo.";
-        try { okLogin = await store.entrar($("pass").value.trim()); }
+        const pass = $("pass").value.trim();
+        let good = false, fallo = "Contraseña incorrecta. Intente de nuevo.";
+        try { good = (await rpc("entrar_consultorio", { p_clave: pass })) === true; }
         catch (x) { fallo = /intentos/i.test(x.message || "") ? "Demasiados intentos. Espere 15 minutos." : NET; }
-        if (okLogin) { adm.unlocked = true; adm.msg = ""; startAdmin(); }
+        if (good) { try { localStorage.setItem(KEY + "-clave", pass); } catch (x) {} adm.unlocked = true; adm.msg = ""; startAdmin(); }
         else { adm.msg = fallo; renderAdmin(); }
       });
       return;
     }
     let h = topBar(right) + '<main class="wrap wide admin"><nav class="nav" role="tablist">' +
-      [["agenda", "Agenda"], ["pegar", "Cargar citas"], ["qr", "Cartel con QR"]].map(([k, l]) => '<button role="tab" type="button" data-tab="' + k + '" aria-selected="' + (adm.tab === k) + '">' + l + '</button>').join("") +
-      '</nav>';
-    h += adm.tab === "agenda" ? agendaHTML() : adm.tab === "pegar" ? pasteHTML() : qrHTML();
-    h += '</main>';
-    app.innerHTML = h;
+      [["agenda", "Agenda"], ["cargar", "Cargar citas"], ["pacientes", "Pacientes"], ["qr", "Cartel con QR"]]
+        .map(([k, l]) => '<button role="tab" type="button" data-tab="' + k + '" aria-selected="' + (adm.tab === k) + '">' + l + '</button>').join("") + '</nav>';
+    h += { agenda: agendaHTML, cargar: cargarHTML, pacientes: pacientesHTML, qr: qrHTML }[adm.tab]();
+    app.innerHTML = h + '</main>';
     wireAdmin();
   }
 
+  // ---------- Agenda + WhatsApp ----------
+  const mensaje = c => "Hola, " + c.nombre + ". Le recordamos su cita con el " + CLINIC.doctor + " (" + CLINIC.consultorio + ") el " +
+    longDay(c.fecha).toLowerCase() + " a las " + ampm(c.hora) + ".\n\n¿Va a venir? Toque aquí para avisar:\n" + SITE_URL + "?c=" + c.token;
+  const waLink = c => "https://wa.me/" + telWa(c.telefono) + "?text=" + encodeURIComponent(mensaje(c));
+  const porEnviar = () => (adm.list || []).filter(c => c.telefono && c.estado === "pendiente" && !c.enviado_en);
+
   function agendaHTML() {
     let h = '<div class="bar"><div><h2>' + longDay(adm.day) + '</h2><span class="sub">' + (adm.day === today() ? "Hoy · " : "") +
-      (adm.list ? adm.list.length + ' citas de ' + SLOTS.length + ' lugares' : 'Cargando…') + '</span></div>' +
-      '<input class="date-in" type="date" id="day" value="' + adm.day + '" aria-label="Cambiar día"></div>';
+      (adm.list ? adm.list.length + ' citas' : 'Cargando…') + '</span></div>' +
+      '<div class="row-btns"><button class="mbtn line" type="button" id="prev-day" aria-label="Día anterior">‹</button>' +
+      '<input class="date-in" type="date" id="day" value="' + adm.day + '" aria-label="Cambiar día">' +
+      '<button class="mbtn line" type="button" id="next-day" aria-label="Día siguiente">›</button></div></div>';
     if (adm.loadErr) h += errBox(adm.loadErr);
     if (!adm.list) return h;
-    const list = adm.list;
-    const n = { camino: 0, pendiente: 0, no_va: 0, llego: 0 };
+    const list = adm.list, n = { camino: 0, pendiente: 0, no_va: 0, llego: 0 };
     list.forEach(c => n[c.estado]++);
-    const isToday = adm.day === today(), now = nowHHMM();
     h += '<div class="stats">' + ["camino", "pendiente", "no_va", "llego"].map(k => '<div class="stat ' + k + '"><b>' + n[k] + '</b><span>' + LABEL[k] + '</span></div>').join("") + '</div>';
+
+    // Envío de WhatsApp, uno por uno
+    if (adm.envio) {
+      const q = adm.envio, c = list.find(x => x.id === q.ids[q.i]);
+      if (c) {
+        h += '<div class="send"><div><span class="sub">Mensaje ' + (q.i + 1) + ' de ' + q.ids.length + '</span><b>' + esc(c.nombre) + numTag(c) + '</b><span class="sub">' + telShow(c.telefono) + ' · ' + c.hora + '</span></div>' +
+          '<div class="row-btns"><a class="mbtn wa" id="wa-go" href="' + esc(waLink(c)) + '" target="_blank" rel="noopener">' + ic("chat") + 'Abrir WhatsApp</a>' +
+          '<button class="mbtn line" type="button" id="wa-skip">Saltar</button><button class="link" type="button" id="wa-stop">Terminar</button></div></div>';
+      } else adm.envio = null;
+    }
+    if (!adm.envio) {
+      const pend = porEnviar(), sinTel = list.filter(c => !c.telefono).length;
+      h += '<div class="sendbar">' +
+        (pend.length ? '<button class="mbtn wa" type="button" id="wa-all">' + ic("chat") + 'Enviar WhatsApp a todos (' + pend.length + ')</button>' : '<span class="sub">' + (list.length ? 'No hay mensajes pendientes por enviar.' : '') + '</span>') +
+        (sinTel ? '<span class="sub">' + sinTel + (sinTel === 1 ? ' paciente no tiene' : ' pacientes no tienen') + ' teléfono.</span>' : '') + '</div>';
+    }
+
+    const isToday = adm.day === today(), now = nowHHMM();
     h += '<div class="list" aria-live="polite">';
     if (!list.length) h += '<div class="empty">No hay citas este día. Use <b>Cargar citas</b> para agregarlas.</div>';
     list.forEach((c, i) => {
@@ -533,64 +567,124 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       const next = list[i + 1];
       const current = isToday && c.hora <= now && (!next || next.hora > now);
       const tag = late ? '<span class="tag late">Ya es su hora · sin aviso</span>'
-        : '<span class="tag ' + c.estado + '">' + LABEL[c.estado] + (c.avisoEn && c.estado !== "pendiente" ? " · " + clock(c.avisoEn) : "") + '</span>';
-      const btn = c.estado === "llego"
-        ? '<button class="sbtn ghost" type="button" data-undo="' + esc(c.id) + '">Deshacer</button>'
-        : '<button class="sbtn fill" type="button" data-llego="' + esc(c.id) + '">Llegó</button>';
+        : '<span class="tag ' + c.estado + '">' + LABEL[c.estado] + (c.avisoEn || c.aviso_en ? (c.estado !== "pendiente" ? " · " + clock(c.aviso_en) : "") : "") + '</span>';
+      const llego = c.estado === "llego"
+        ? '<button class="sbtn ghost" type="button" data-undo="' + c.id + '">Deshacer</button>'
+        : '<button class="sbtn fill" type="button" data-llego="' + c.id + '">Llegó</button>';
+      const tel = c.telefono
+        ? '<button class="telbtn" type="button" data-tel="' + c.id + '">' + ic("phone") + telShow(c.telefono) + '</button>' + (c.enviado_en ? ' <span class="sent">' + ic("check") + 'enviado</span>' : '')
+        : '<button class="telbtn add" type="button" data-tel="' + c.id + '">+ Agregar teléfono</button>';
+      const wa = c.telefono ? '<a class="sbtn wa" href="' + esc(waLink(c)) + '" target="_blank" rel="noopener" data-wa="' + c.id + '" aria-label="WhatsApp a ' + esc(c.nombre) + '">' + ic("chat") + '</a>' : '';
       h += '<div class="row ' + c.estado + (current ? " now" : "") + '"><span class="hr">' + c.hora + '</span>' +
-        '<div style="min-width:0"><div class="name">' + esc(c.nombre) + '</div></div>' +
-        '<div class="right">' + tag + btn + '</div></div>';
+        '<div style="min-width:0"><div class="name">' + esc(c.nombre) + numTag(c) + '</div><div class="meta">' + tel + '</div></div>' +
+        '<div class="right">' + tag + wa + llego + '</div></div>';
+      if (adm.editTel === c.id) {
+        h += '<form class="telform" id="f-tel"><label for="tel-in">Teléfono de ' + esc(c.nombre) + '</label>' +
+          '<div class="row-btns"><input class="ein" id="tel-in" type="tel" inputmode="tel" value="' + esc(telShow(c.telefono)) + '" placeholder="55 1234 5678">' +
+          '<button class="mbtn" type="submit">Guardar</button><button class="mbtn line" type="button" id="tel-cancel">Cancelar</button></div>' +
+          '<span class="sub">Se queda guardado para las próximas citas de este paciente.</span></form>';
+      }
     });
-    h += '</div>';
-    if (!REAL) h += '<div class="row-btns"><button class="mbtn line" type="button" id="reset">Restaurar citas de ejemplo</button></div>';
-    return h;
+    return h + '</div>';
   }
 
-  const SAMPLE_PASTE = "Nombre\nPEREZ GARCIA JUAN CARLOS\nRUIZ SOTO ANA LAURA\nVEGA LUNA PEDRO\nCRUZ MORA ELENA\nLARA NUÑEZ OSCAR";
+  // ---------- Cargar citas (foto o texto) ----------
+  const pacPorNombre = () => {
+    const m = new Map();
+    (adm.pacientes || []).forEach(p => { const k = norm(p.nombre); if (!m.has(k)) m.set(k, []); m.get(k).push(p); });
+    return m;
+  };
+  function choices(r) { return adm.pacientes ? (pacPorNombre().get(norm(r.nombre)) || []) : []; }
+  function autoPid(r) {
+    const m = choices(r);
+    if (r.pid !== undefined && (r.pid === "nuevo" || m.some(p => p.id === r.pid))) return r.pid;
+    return m.length === 1 ? m[0].id : m.length === 0 ? "nuevo" : "";
+  }
+  function choques() {
+    const by = new Map();
+    adm.rows.forEach((r, i) => { if (!r.hora) return; if (!by.has(r.hora)) by.set(r.hora, []); by.get(r.hora).push(i); });
+    return by;
+  }
+  function rowProblem(r, i, by) {
+    if (r.nombre.trim().length < 2) return "Falta el nombre.";
+    if (!r.hora) return "Escoja una hora.";
+    const otros = (by.get(r.hora) || []).filter(j => j !== i);
+    if (otros.length) return "Misma hora que el número " + otros.map(j => j + 1).join(" y ") + ".";
+    if (autoPid(r) === "") return "Hay varios pacientes con este nombre: escoja cuál.";
+    return "";
+  }
 
-  function pasteHTML() {
-    let h = '<section class="stack paste"><div class="bar"><div><h2>Cargar citas</h2><span class="sub">Tome una foto de la lista y revise los nombres.</span></div></div>' +
+  function cargarHTML() {
+    let h = '<section class="stack paste"><div class="bar"><div><h2>Cargar citas</h2><span class="sub">Tome una foto de la lista y revise los nombres y las horas.</span></div></div>' +
       '<div class="row-btns"><label for="pday" style="font-weight:700;font-size:17px">Fecha de las citas</label><input class="date-in" type="date" id="pday" value="' + adm.pasteDay + '"></div>';
     if (adm.ocr !== null) {
       h += '<div class="ocr"><b>Leyendo la lista…</b> <span class="sub">Puede tardar unos segundos.</span><div class="prog"><span style="width:' + Math.round(adm.ocr * 100) + '%"></span></div></div>';
     } else {
-      h += '<div class="pick"><label class="btn-xl btn-blue photo" for="foto">' + ic("camera") + (adm.rows ? 'Tomar otra foto' : 'Tomar foto de la lista') + '</label>' +
+      h += '<div class="pick2"><label class="btn-xl btn-blue photo" for="foto">' + ic("camera") + (adm.rows ? 'Agregar otra foto' : 'Tomar o subir foto') + '</label>' +
+        '<button class="btn-xl btn-plain" type="button" id="toggle-paste">' + ic("paste") + (adm.showPaste ? 'Ocultar pegar' : 'Pegar lista') + '</button></div>' +
         '<input id="foto" type="file" accept="image/*" hidden>' +
-        '<button class="link" type="button" id="toggle-paste">' + (adm.showPaste ? 'Ocultar texto' : 'O pegar la lista escrita') + '</button></div>';
+        (adm.rows ? '' : '<button class="link" type="button" id="empty-list">O escribir la lista a mano</button>');
       if (adm.showPaste) {
-        h += '<textarea id="ptext" spellcheck="false" aria-label="Lista de pacientes" placeholder="PEREZ GARCIA JUAN">' + esc(adm.pasteText) + '</textarea>' +
-          '<div class="row-btns"><button class="mbtn" type="button" id="do-preview">Leer lista</button><button class="mbtn line" type="button" id="fill-sample">Usar lista de ejemplo</button></div>';
+        h += '<div class="pastebox"><label for="ptext"><b>Pegue aquí la lista</b> <span class="sub">— texto copiado de Excel, WhatsApp o el sistema, o una imagen (captura de pantalla). En el celular: mantenga el dedo aquí y toque <b>Pegar</b>.</span></label>' +
+          '<textarea id="ptext" spellcheck="false" placeholder="PEREZ GARCIA JUAN&#10;RUIZ SOTO ANA LAURA&#10;…">' + esc(adm.pasteText) + '</textarea>' +
+          '<div class="row-btns"><button class="mbtn" type="button" id="do-preview">' + (adm.rows ? 'Agregar a la lista' : 'Leer lista') + '</button></div></div>';
       }
     }
     h += errBox(adm.msg);
     if (adm.rows) {
       h += '<div id="count" aria-live="polite">' + countHTML() + '</div>' +
-        '<p class="help">Toque un nombre para corregirlo. La hora se pone sola según el orden.</p>' +
-        '<ol class="edit">' + adm.rows.map(rowEdit).join("") + '</ol>' +
+        '<p class="help">Toque un nombre para corregirlo y la hora para cambiarla. Si la foto juntó dos nombres, use <b>Separar</b>.</p>' +
+        '<ol class="edit">' + rowsHTML() + '</ol>' +
         '<div class="row-btns"><button class="mbtn line" type="button" id="add-row">+ Agregar paciente</button>' +
         '<button class="mbtn orange" type="button" id="do-save">Guardar citas</button></div>';
     }
     return h + '</section>';
   }
-
-  const rowOk = (r, i) => r.nombre.trim().length > 1 && i < SLOTS.length;
-  function rowEdit(r, i) {
-    const over = i >= SLOTS.length;
-    return '<li class="erow' + (rowOk(r, i) ? '' : ' bad') + (over ? ' over' : '') + '" data-row="' + i + '">' +
-      '<span class="num">' + (i + 1) + '</span><span class="ehr">' + (over ? 'sin hora' : SLOTS[i]) + '</span>' +
-      '<input class="ein nm' + (r.nombre.trim() ? '' : ' missing') + '" data-i="' + i + '" value="' + esc(r.nombre) + '" aria-label="Nombre del paciente ' + (i + 1) + '" placeholder="Nombre y apellido">' +
-      '<button class="del" type="button" data-del="' + i + '" aria-label="Quitar paciente ' + (i + 1) + '">×</button></li>';
+  function rowsHTML() { const by = choques(); return adm.rows.map((r, i) => rowEdit(r, i, by)).join(""); }
+  function rowEdit(r, i, by) {
+    const prob = rowProblem(r, i, by), choque = /Misma hora/.test(prob);
+    const opts = '<option value="">Hora…</option>' + HORAS.map(x => {
+      const usado = (by.get(x) || []).filter(j => j !== i).length;
+      return '<option value="' + x + '"' + (x === r.hora ? ' selected' : '') + '>' + x + (usado ? ' · ocupada' : '') + '</option>';
+    }).join("");
+    const m = choices(r), pid = autoPid(r);
+    let quien = "";
+    if (adm.pacientes && r.nombre.trim().length > 1) {
+      if (m.length > 1) {
+        quien = '<select class="who-pick' + (pid === "" ? ' missing' : '') + '" data-pick="' + i + '" aria-label="Cuál paciente">' +
+          '<option value="">¿Cuál de ellos?</option>' +
+          m.map(p => '<option value="' + p.id + '"' + (pid === p.id ? ' selected' : '') + '>' + esc(p.nombre) + ' (' + p.num + ') · ' + (p.telefono ? telShow(p.telefono) : 'sin teléfono') + '</option>').join("") +
+          '<option value="nuevo"' + (pid === "nuevo" ? ' selected' : '') + '>Es otro paciente nuevo</option></select>';
+      } else if (m.length === 1) quien = '<span class="known">' + ic("check") + 'Registrado · ' + (m[0].telefono ? telShow(m[0].telefono) : 'sin teléfono') + '</span>';
+      else quien = '<span class="known new">Paciente nuevo</span>';
+    }
+    return '<li class="erow' + (prob ? ' bad' : '') + (choque ? ' clash' : '') + '" data-row="' + i + '">' +
+      '<span class="num">' + (i + 1) + '</span>' +
+      '<select class="hsel' + (choque || !r.hora ? ' missing' : '') + '" data-hora="' + i + '" aria-label="Hora del paciente ' + (i + 1) + '">' + opts + '</select>' +
+      '<div class="ecol"><input class="ein nm' + (r.nombre.trim() ? '' : ' missing') + '" data-i="' + i + '" value="' + esc(r.nombre) + '" aria-label="Nombre del paciente ' + (i + 1) + '" placeholder="Nombre y apellido">' +
+      '<div class="emeta">' + quien + (prob ? '<span class="eprob">' + prob + '</span>' : '') + '</div></div>' +
+      '<div class="eacts"><button class="mini-link" type="button" data-split="' + i + '">Separar</button>' +
+      '<button class="del" type="button" data-del="' + i + '" aria-label="Quitar paciente ' + (i + 1) + '">×</button></div></li>';
   }
   function countHTML() {
-    const n = adm.rows.length, max = SLOTS.length;
-    const sinNombre = adm.rows.filter(r => r.nombre.trim().length < 2).length;
+    const n = adm.rows.length, max = SLOTS.length, by = choques();
+    const problemas = adm.rows.filter((r, i) => rowProblem(r, i, by)).length;
+    const choquesN = [...by.values()].filter(v => v.length > 1).length;
     const msgs = [];
-    if (n > max) msgs.push('Hay <b>' + n + '</b> nombres y solo caben <b>' + max + '</b>. Quite ' + (n - max) + '.');
+    if (n > max) msgs.push('Hay <b>' + n + '</b> nombres y el horario es de <b>' + max + '</b>.');
     else if (n < max) msgs.push('Hay <b>' + n + '</b> nombres. Faltan <b>' + (max - n) + '</b> para llenar los ' + max + ' lugares.');
-    if (sinNombre) msgs.push(sinNombre + (sinNombre === 1 ? ' renglón está vacío.' : ' renglones están vacíos.'));
-    if (!msgs.length) return '<div class="notice ok">' + ic("check") + '<span><b>' + n + ' pacientes</b> · lista completa, de 8:00 a 1:45.</span></div>';
+    if (choquesN) msgs.push('<b class="red">' + choquesN + (choquesN === 1 ? ' hora tiene' : ' horas tienen') + ' dos pacientes.</b>');
+    if (problemas) msgs.push(problemas + (problemas === 1 ? ' renglón por revisar.' : ' renglones por revisar.'));
+    if (!msgs.length) return '<div class="notice ok">' + ic("check") + '<span><b>' + n + ' pacientes</b> · lista completa.</span></div>';
     return '<div class="notice warn" role="alert">' + ic("alert") + '<span>' + msgs.join('<br>') + '</span></div>';
   }
+  function redrawRows() {
+    const ol = app.querySelector("ol.edit"); if (!ol) return;
+    const focusI = document.activeElement?.dataset?.i, pos = document.activeElement?.selectionStart;
+    ol.innerHTML = rowsHTML(); $("count").innerHTML = countHTML(); wireRows();
+    if (focusI !== undefined) { const el = ol.querySelector('.ein.nm[data-i="' + focusI + '"]'); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} } }
+  }
+  function primeraLibre() { const usadas = new Set(adm.rows.map(r => r.hora)); return SLOTS.find(s => !usadas.has(s)) || ""; }
 
   // Foto → texto, en el mismo celular (Tesseract)
   function prepImage(file) {
@@ -610,14 +704,19 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       img.src = URL.createObjectURL(file);
     });
   }
-  // Un renglón = un paciente. Se quitan números, horas y símbolos; se queda el nombre.
   function rowsFromText(text) {
     return text.split(/\r?\n/).map(l => l
         .replace(/\b\d{1,2}:\d{2}\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/gi, " ")
         .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ' ]/g, " ")
         .replace(/\s+/g, " ").trim())
       .filter(l => l.split(" ").filter(w => w.length > 1).length >= 2 && l.length >= 5 && !/\b(nombre|paciente|hora|fecha|lista|consultorio|folio|afiliaci)/i.test(l))
-      .map(l => ({ nombre: l.toLowerCase().replace(/(^|\s)(\S)/g, (a, b, c) => b + c.toUpperCase()) }));
+      .map(l => ({ nombre: titleCase(l), hora: "", pid: undefined }));
+  }
+  // Lo nuevo (foto o texto pegado) se agrega al final; las horas siguen en los lugares libres
+  function agregarFilas(nuevas) {
+    adm.rows = adm.rows || [];
+    nuevas.forEach(r => { r.hora = primeraLibre(); adm.rows.push(r); });
+    aviso();
   }
   async function leerFoto(file) {
     if (!window.Tesseract) { adm.msg = "No se pudo cargar el lector de fotos. Revise el internet."; return renderAdmin(); }
@@ -630,76 +729,174 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       const { data } = await worker.recognize(img);
       await worker.terminate();
       const rows = rowsFromText(data.text);
-      if (rows.length) { adm.rows = rows; aviso(); }
+      if (rows.length) agregarFilas(rows);
       else adm.msg = "No se pudo leer ningún nombre. Tome la foto de frente, con buena luz, y que la lista llene toda la foto.";
     } catch (e) { adm.msg = "No se pudo leer la foto. Intente de nuevo."; }
     adm.ocr = null; renderAdmin();
   }
-  // Si no son exactamente 24, el celular vibra para avisar
   function aviso() { if (adm.rows.length !== SLOTS.length && navigator.vibrate) navigator.vibrate([200, 100, 200]); }
 
-  function refreshRow(i) {
-    const li = app.querySelector('[data-row="' + i + '"]'); if (!li) return;
-    li.classList.toggle("bad", !rowOk(adm.rows[i], i));
-    li.querySelector(".nm").classList.toggle("missing", !adm.rows[i].nombre.trim());
-    $("count").innerHTML = countHTML();
+  // ---------- Pacientes ----------
+  function pacientesHTML() {
+    let h = '<section class="stack"><div class="bar"><div><h2>Pacientes</h2><span class="sub">Nombre y teléfono. Se usan para mandar los WhatsApp.</span></div>' +
+      '<button class="mbtn" type="button" id="p-new">+ Nuevo paciente</button></div>' + errBox(adm.msg);
+    if (adm.pedit && adm.pedit.id === null) h += pacForm(adm.pedit);
+    h += '<input class="ein" id="pq" type="search" placeholder="Buscar paciente por nombre" value="' + esc(adm.pq) + '" aria-label="Buscar paciente">';
+    if (!adm.pacientes) return h + '<p class="sub">Cargando…</p></section>';
+    const q = norm(adm.pq);
+    const list = adm.pacientes.filter(p => !q || norm(p.nombre).includes(q));
+    const sinTel = adm.pacientes.filter(p => !p.telefono).length;
+    h += '<p class="sub">' + adm.pacientes.length + ' pacientes' + (sinTel ? ' · ' + sinTel + ' sin teléfono' : '') + '</p><div class="list">';
+    if (!list.length) h += '<div class="empty">' + (adm.pacientes.length ? 'Nadie con ese nombre.' : 'Todavía no hay pacientes. Se agregan solos al cargar una lista de citas.') + '</div>';
+    list.forEach(p => {
+      if (adm.pedit && adm.pedit.id === p.id) { h += pacForm(adm.pedit); return; }
+      h += '<div class="prow"><div style="min-width:0"><div class="name">' + esc(p.nombre) + numTag(p) + '</div>' +
+        '<div class="meta">' + (p.telefono ? ic("phone") + telShow(p.telefono) : '<span class="nophone">Sin teléfono</span>') + '</div></div>' +
+        '<button class="sbtn" type="button" data-pedit="' + p.id + '">' + (p.telefono ? 'Editar' : 'Agregar teléfono') + '</button></div>';
+    });
+    return h + '</div></section>';
+  }
+  function pacForm(p) {
+    return '<form class="pform" id="f-pac"><div class="field"><label for="p-nombre">Nombre</label><input class="ein" id="p-nombre" value="' + esc(p.nombre) + '" autocapitalize="words"></div>' +
+      '<div class="field"><label for="p-tel">Teléfono (WhatsApp)</label><input class="ein" id="p-tel" type="tel" inputmode="tel" value="' + esc(telShow(p.telefono)) + '" placeholder="55 1234 5678"></div>' +
+      '<div class="row-btns"><button class="mbtn" type="submit">Guardar</button><button class="mbtn line" type="button" id="p-cancel">Cancelar</button>' +
+      (p.id && !p.confirmDel ? '<button class="link danger" type="button" id="p-del">Borrar paciente</button>' : '') +
+      (p.confirmDel ? '<span class="sub">¿Seguro?</span><button class="mbtn orange" type="button" id="p-del-yes">Sí, borrar</button>' : '') + '</div></form>';
   }
 
   function qrHTML() {
-    return '<section class="poster"><div><span class="eyebrow">' + CLINIC.doctor + ' · ' + CLINIC.lugar.split("·").pop().trim() + '</span><h2>¿Tiene cita? Avise si viene.</h2>' +
-      '<ol><li>Apunte la cámara de su celular a este código.</li><li>Guarde la página para el día de su cita.</li><li>Busque su nombre y toque <b>Voy en camino</b> o <b>Ya no voy a ir</b>.</li></ol>' +
-      '<p class="small">' + PATIENT_URL.replace(/^https:\/\//, "") + '</p></div>' +
+    return '<section class="poster"><div><span class="eyebrow">' + CLINIC.doctor + ' · ' + CLINIC.consultorio + '</span><h2>¿Tiene cita? Avise si viene.</h2>' +
+      '<ol><li>Apunte la cámara de su celular a este código.</li><li>Guarde la página para el día de su cita.</li><li>Escriba su nombre y toque <b>Sí voy</b> o <b>Ya no voy a ir</b>.</li></ol>' +
+      '<p class="small">' + SITE_URL.replace(/^https:\/\//, "") + '</p></div>' +
       '<div class="qrbox" id="qr" role="img" aria-label="Código QR de la página para pacientes"></div></section>';
   }
-  const PATIENT_URL = "https://areijond-bit.github.io/avisa-tu-cita/";
+
+  // ---------- eventos del panel ----------
+  function wireRows() {
+    app.querySelectorAll(".ein.nm").forEach(inp => inp.addEventListener("input", () => {
+      const r = adm.rows[+inp.dataset.i]; r.nombre = inp.value; r.pid = undefined;
+      clearTimeout(wireRows.t); wireRows.t = setTimeout(redrawRows, 500);
+    }));
+    app.querySelectorAll("[data-hora]").forEach(s => s.addEventListener("change", () => { adm.rows[+s.dataset.hora].hora = s.value; redrawRows(); }));
+    app.querySelectorAll("[data-pick]").forEach(s => s.addEventListener("change", () => { adm.rows[+s.dataset.pick].pid = s.value || undefined; if (!s.value) adm.rows[+s.dataset.pick].pid = ""; redrawRows(); }));
+    app.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => { adm.rows.splice(+b.dataset.del, 1); redrawRows(); }));
+    app.querySelectorAll("[data-split]").forEach(b => b.addEventListener("click", () => {
+      const i = +b.dataset.split, w = adm.rows[i].nombre.trim().split(/\s+/);
+      if (w.length < 4) return;
+      const mid = Math.ceil(w.length / 2);
+      adm.rows[i].nombre = w.slice(0, mid).join(" "); adm.rows[i].pid = undefined;
+      adm.rows.splice(i + 1, 0, { nombre: w.slice(mid).join(" "), hora: primeraLibre(), pid: undefined });
+      redrawRows();
+    }));
+  }
 
   function wireAdmin() {
-    on("to-pac", () => go("pac"));
-    on("logout", async () => { await store.salir(); adm.unlocked = false; renderAdmin(); });
-    app.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => { adm.tab = b.dataset.tab; adm.msg = ""; renderAdmin(); if (adm.tab === "agenda") loadDay(); }));
+    on("logout", salir);
+    app.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => {
+      adm.tab = b.dataset.tab; adm.msg = ""; adm.pedit = null; adm.editTel = null; renderAdmin();
+      if (adm.tab === "agenda") loadDay();
+      if (adm.tab === "pacientes" || adm.tab === "cargar") loadPacientes();
+    }));
+
+    // agenda
     const day = $("day");
-    if (day) day.addEventListener("change", () => { if (day.value) { adm.day = day.value; adm.list = null; renderAdmin(); loadDay(); } });
-    app.querySelectorAll("[data-llego]").forEach(b => b.addEventListener("click", async () => { busy(); try { await store.marcar(b.dataset.llego, "llego"); } catch (e) {} loadDay(); }));
-    app.querySelectorAll("[data-undo]").forEach(b => b.addEventListener("click", async () => { busy(); try { await store.marcar(b.dataset.undo, "pendiente"); } catch (e) {} loadDay(); }));
-    on("reset", async () => { await Demo.reiniciar(); adm.day = today(); loadDay(); });
+    if (day) day.addEventListener("change", () => { if (day.value) { adm.day = day.value; adm.list = null; adm.envio = null; renderAdmin(); loadDay(); } });
+    on("prev-day", () => { adm.day = addDays(adm.day, -1); adm.list = null; adm.envio = null; renderAdmin(); loadDay(); });
+    on("next-day", () => { adm.day = addDays(adm.day, 1); adm.list = null; adm.envio = null; renderAdmin(); loadDay(); });
+    app.querySelectorAll("[data-llego]").forEach(b => b.addEventListener("click", async () => { busy(); try { await staff("marcar_cita", { p_id: b.dataset.llego, p_estado: "llego" }); } catch (e) {} loadDay(); }));
+    app.querySelectorAll("[data-undo]").forEach(b => b.addEventListener("click", async () => { busy(); try { await staff("marcar_cita", { p_id: b.dataset.undo, p_estado: "pendiente" }); } catch (e) {} loadDay(); }));
+    app.querySelectorAll("[data-tel]").forEach(b => b.addEventListener("click", () => { adm.editTel = b.dataset.tel; renderAdmin(); const t = $("tel-in"); if (t) t.focus(); }));
+    on("tel-cancel", () => { adm.editTel = null; renderAdmin(); });
+    const ft = $("f-tel");
+    if (ft) ft.addEventListener("submit", async e => {
+      e.preventDefault();
+      const c = adm.list.find(x => x.id === adm.editTel); const tel = telDigits($("tel-in").value);
+      if (tel && tel.length < 10) { alertTel(); return; }
+      busy();
+      try { await staff("paciente_guardar", { p_id: c.paciente_id, p_nombre: c.nombre, p_telefono: tel, p_cita: c.id }); } catch (x) {}
+      adm.editTel = null; adm.pacientes = null; loadDay();
+    });
+    const marcarEnviado = id => { const c = adm.list.find(x => x.id === id); if (c) c.enviado_en = new Date().toISOString(); staff("marcar_enviado", { p_id: id }).catch(() => {}); };
+    app.querySelectorAll("[data-wa]").forEach(a => a.addEventListener("click", () => { marcarEnviado(a.dataset.wa); setTimeout(renderAdmin, 300); }));
+    on("wa-all", () => { adm.envio = { ids: porEnviar().map(c => c.id), i: 0 }; renderAdmin(); });
+    const go = $("wa-go");
+    if (go) go.addEventListener("click", () => { marcarEnviado(adm.envio.ids[adm.envio.i]); setTimeout(() => { adm.envio.i++; if (adm.envio.i >= adm.envio.ids.length) adm.envio = null; renderAdmin(); }, 400); });
+    on("wa-skip", () => { adm.envio.i++; if (adm.envio.i >= adm.envio.ids.length) adm.envio = null; renderAdmin(); });
+    on("wa-stop", () => { adm.envio = null; renderAdmin(); });
+
+    // cargar citas
     const pd = $("pday");
     if (pd) pd.addEventListener("change", () => { adm.pasteDay = pd.value || today(); });
     const foto = $("foto");
     if (foto) foto.addEventListener("change", () => { const f = foto.files && foto.files[0]; if (f) leerFoto(f); });
     on("toggle-paste", () => { adm.showPaste = !adm.showPaste; renderAdmin(); });
+    on("empty-list", () => { adm.rows = [{ nombre: "", hora: SLOTS[0], pid: undefined }]; renderAdmin(); const el = app.querySelector(".ein.nm"); if (el) el.focus(); });
     const pt = $("ptext");
     if (pt) pt.addEventListener("input", () => { adm.pasteText = pt.value; });
-    on("fill-sample", () => { adm.pasteText = SAMPLE_PASTE; adm.msg = ""; renderAdmin(); });
     on("do-preview", () => {
       const rows = rowsFromText(adm.pasteText);
-      if (rows.length) { adm.rows = rows; adm.msg = ""; aviso(); } else adm.msg = "No se encontró ningún nombre en el texto.";
+      if (rows.length) { agregarFilas(rows); adm.msg = ""; adm.pasteText = ""; adm.showPaste = false; } else adm.msg = "No se encontró ningún nombre en el texto.";
       renderAdmin();
     });
-    app.querySelectorAll(".ein").forEach(inp => inp.addEventListener("input", () => { const i = +inp.dataset.i; adm.rows[i].nombre = inp.value; refreshRow(i); }));
-    app.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => { adm.rows.splice(+b.dataset.del, 1); renderAdmin(); }));
+    if (app.querySelector("ol.edit")) wireRows();
     on("add-row", () => {
-      adm.rows.push({ nombre: "" }); renderAdmin();
+      adm.rows.push({ nombre: "", hora: primeraLibre(), pid: undefined }); redrawRows();
       const all = app.querySelectorAll(".ein.nm"); if (all.length) all[all.length - 1].focus();
     });
     on("do-save", async () => {
       const rows = adm.rows.filter(r => r.nombre.trim());
-      if (rows.length > SLOTS.length) { adm.msg = "Hay más de " + SLOTS.length + " pacientes. Quite los que sobran antes de guardar."; return renderAdmin(); }
+      adm.rows = rows;
+      const by = choques();
       if (!rows.length) { adm.msg = "La lista está vacía."; return renderAdmin(); }
+      if (rows.some((r, i) => rowProblem(r, i, by))) { adm.msg = "Revise los renglones marcados antes de guardar."; return renderAdmin(); }
       busy();
       try {
-        await store.guardar(rows.map((r, i) => ({ fecha: adm.pasteDay, hora: SLOTS[i], nombre: r.nombre.trim().replace(/\s+/g, " ") })));
-        adm.day = adm.pasteDay; adm.rows = null; adm.pasteText = ""; adm.showPaste = false;
+        await staff("guardar_citas", { p_citas: rows.map(r => {
+          const pid = autoPid(r);
+          return { fecha: adm.pasteDay, hora: r.hora, nombre: r.nombre.trim().replace(/\s+/g, " "), paciente_id: pid && pid !== "nuevo" ? pid : null, nuevo: pid === "nuevo" };
+        }) });
+        adm.day = adm.pasteDay; adm.rows = null; adm.pasteText = ""; adm.showPaste = false; adm.pacientes = null;
         adm.tab = "agenda"; adm.list = null; adm.msg = "";
         renderAdmin(); loadDay();
-      } catch (e) { adm.msg = "No se pudieron guardar las citas. Revise el internet e intente de nuevo."; renderAdmin(); }
+      } catch (e) { if (e.message !== "clave") { adm.msg = "No se pudieron guardar las citas. Revise el internet e intente de nuevo."; renderAdmin(); } }
     });
+
+    // pacientes
+    const pq = $("pq");
+    if (pq) pq.addEventListener("input", () => { adm.pq = pq.value; const pos = pq.selectionStart; renderAdmin(); const n = $("pq"); n.focus(); n.setSelectionRange(pos, pos); });
+    on("p-new", () => { adm.pedit = { id: null, nombre: "", telefono: "" }; renderAdmin(); $("p-nombre").focus(); });
+    app.querySelectorAll("[data-pedit]").forEach(b => b.addEventListener("click", () => {
+      const p = adm.pacientes.find(x => x.id === b.dataset.pedit); adm.pedit = Object.assign({}, p); renderAdmin(); const t = $("p-tel"); if (t) t.focus();
+    }));
+    on("p-cancel", () => { adm.pedit = null; renderAdmin(); });
+    on("p-del", () => { adm.pedit.confirmDel = true; renderAdmin(); });
+    on("p-del-yes", async () => { busy(); try { await staff("paciente_borrar", { p_id: adm.pedit.id }); } catch (e) {} adm.pedit = null; loadPacientes(); });
+    const fp = $("f-pac");
+    if (fp) fp.addEventListener("submit", async e => {
+      e.preventDefault();
+      const nombre = $("p-nombre").value.trim(), tel = telDigits($("p-tel").value);
+      if (nombre.length < 2) { adm.msg = "Escriba el nombre del paciente."; return renderAdmin(); }
+      if (tel && tel.length < 10) { alertTel(); return; }
+      busy();
+      try { const r = await staff("paciente_guardar", { p_id: adm.pedit.id, p_nombre: titleCase(nombre), p_telefono: tel }); adm.msg = r.error || ""; } catch (x) {}
+      adm.pedit = null; loadPacientes();
+    });
+
     const qr = $("qr");
-    if (qr && window.QRCode) new QRCode(qr, { text: PATIENT_URL, width: 400, height: 400, colorDark: "#0F1B2D", colorLight: "#FFFFFF" });
+    if (qr && window.QRCode) new QRCode(qr, { text: SITE_URL, width: 400, height: 400, colorDark: "#0F1B2D", colorLight: "#FFFFFF" });
   }
+  function alertTel() { adm.msg = "El teléfono debe tener 10 números."; renderAdmin(); }
+
+  // Pegar una imagen (captura de pantalla) en "Cargar citas" la lee igual que una foto
+  document.addEventListener("paste", e => {
+    if (view !== "adm" || !adm.unlocked || adm.tab !== "cargar" || adm.ocr !== null) return;
+    const img = [...(e.clipboardData?.items || [])].find(it => it.type.startsWith("image/"));
+    if (img) { e.preventDefault(); leerFoto(img.getAsFile()); }
+  });
 
   let listening = false;
   function startAdmin() {
-    if (!listening) { store.escuchar(() => { if (adm.unlocked) loadDay(); }); listening = true; }
+    if (!listening) { setInterval(() => { if (!document.hidden && adm.unlocked && view === "adm" && adm.tab === "agenda" && !adm.envio) loadDay(); }, 10000); listening = true; }
     adm.list = null; renderAdmin(); loadDay();
   }
 
@@ -707,12 +904,15 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   let view = location.hash === "#consultorio" ? "adm" : "pac";
   async function go(v) {
     view = v; window.scrollTo(0, 0);
-    if (v === "pac") return renderPatient();
-    adm.unlocked = await store.sesion().catch(() => false);
+    if (v === "pac") {
+      const t = new URLSearchParams(location.search).get("c");
+      return t && /^[0-9a-f-]{36}$/i.test(t) ? abrirLink(t) : renderPatient();
+    }
+    adm.unlocked = false;
+    if (clave()) { try { adm.unlocked = (await rpc("entrar_consultorio", { p_clave: clave() })) === true; } catch (e) {} }
     adm.unlocked ? startAdmin() : renderAdmin();
   }
   window.addEventListener("hashchange", () => go(location.hash === "#consultorio" ? "adm" : "pac"));
-  setInterval(() => { if (view === "adm" && adm.unlocked && adm.tab === "agenda") loadDay(); }, 60000);
   go(view);
 })();
 </script>
