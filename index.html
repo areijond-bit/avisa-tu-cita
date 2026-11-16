@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700;800&family=Atkinson+Hyperlegible+Mono:wght@500;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 /* Layout: encabezado blanco con línea azul; una columna angosta para el paciente con una sola acción por pantalla; el consultorio ve una lista por hora. Siempre fondo blanco. */
 :root {
@@ -213,13 +214,20 @@ tr.bad td { color: var(--error); background: #FDECEA; }
 
 <script>
 (function () {
-  const KEY = "avisa-cita-demo-v2";
-  // Horario de consulta: de 8:00 a 14:00, una cita cada 15 minutos (24 lugares)
+  // ======== CONFIGURACIÓN ========
+  // Datos de Supabase (Project Settings → API). Si están vacíos, la página funciona en modo de prueba.
+  const CONFIG = { url: "", key: "" };
+  const CLINIC = { doctor: "Dr. Alejandro Alba", lugar: "Medicina Familiar · Consultorio 8", tel: "55 1234 5678" };
+  // Horario de consulta: de 8:00 a 14:00, una consulta cada 15 minutos (24 lugares)
   const HORARIO = { inicio: 8 * 60, fin: 14 * 60, cada: 15 };
+  const PIN_PRUEBA = "1234";
+  // ===============================
+
+  const REAL = !!(CONFIG.url && CONFIG.key && window.supabase);
+  const sb = REAL ? window.supabase.createClient(CONFIG.url, CONFIG.key) : null;
+  const KEY = "avisa-cita-demo-v3";
   const SLOTS = [];
   for (let m = HORARIO.inicio; m < HORARIO.fin; m += HORARIO.cada) SLOTS.push(String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"));
-  const CLINIC = { doctor: "Dr. Alejandro Alba", lugar: "Medicina Familiar · Consultorio 8", tel: "55 1234 5678" };
-  const PIN = "1234";
 
   // ---------- íconos ----------
   const ICON = {
@@ -252,69 +260,102 @@ tr.bad td { color: var(--error); background: #FDECEA; }
   };
   const clock = iso => { const d = new Date(iso); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
   const nowHHMM = () => { const d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
+  const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 
-  // ---------- datos de ejemplo ----------
+  // ---------- almacén de prueba (solo este dispositivo) ----------
   function sample() {
     const t = today(), m = addDays(t, 1);
     const ago = min => new Date(Date.now() - min * 60000).toISOString();
     const hoy = [
-      ["Rosa María Hernández Cruz", "43987612821", "llego", ago(130)],
-      ["José Luis Martínez Pérez", "11856703347", "camino", ago(15)],
-      ["María Elena López Torres", "62907514821", "pendiente", null],
-      ["Francisco Javier Gómez Ruiz", "30816402955", "no_va", ago(240)],
-      ["Guadalupe Sánchez Rivera", "75887109163", "camino", ago(6)],
-      ["Antonio Flores Mendoza", "29846801472", "pendiente", null],
-      ["Carmen Ortiz Vargas", "51896207738", "pendiente", null],
-      ["Manuel Castillo Reyes", "84926305519", "pendiente", null],
-      ["Juana Ramírez Aguilar", "20857306611", "camino", ago(40)],
-      ["Pedro Navarro Salinas", "67897005284", "pendiente", null],
-      ["Leticia Domínguez Ríos", "38866209902", "pendiente", null],
-      ["Alfonso Medina Rojas", "55917403376", "no_va", ago(90)],
-      ["Silvia Guerrero Peña", "71886508140", "pendiente", null],
-      ["Raúl Cortés Fuentes", "13897102265", "pendiente", null],
-      ["Martha Alicia Ríos León", "46906801593", "pendiente", null],
-      ["Héctor Vázquez Ibarra", "82877604418", "pendiente", null],
-      ["Josefina Campos Luna", "24896307027", "camino", ago(3)],
-      ["Ernesto Silva Montes", "59846905631", "pendiente", null],
-      ["Dolores Estrada Cano", "36917208854", "pendiente", null],
-      ["Jorge Alberto Rosas Soto", "90866504769", "pendiente", null],
-      ["Yolanda Mejía Paredes", "17887901382", "pendiente", null],
-      ["Salvador Ochoa Bravo", "63906602917", "pendiente", null],
-      ["Irma Contreras Vega", "48857409046", "pendiente", null],
-      ["Arturo Pineda Lara", "75897103558", "pendiente", null]
+      ["Rosa María Hernández Cruz", "2821", "llego", ago(130)], ["José Luis Martínez Pérez", "3347", "camino", ago(15)],
+      ["María Elena López Torres", "4821", "pendiente", null], ["Francisco Javier Gómez Ruiz", "2955", "no_va", ago(240)],
+      ["Guadalupe Sánchez Rivera", "9163", "camino", ago(6)], ["Antonio Flores Mendoza", "1472", "pendiente", null],
+      ["Carmen Ortiz Vargas", "7738", "pendiente", null], ["Manuel Castillo Reyes", "5519", "pendiente", null],
+      ["Juana Ramírez Aguilar", "6611", "camino", ago(40)], ["Pedro Navarro Salinas", "5284", "pendiente", null],
+      ["Leticia Domínguez Ríos", "9902", "pendiente", null], ["Alfonso Medina Rojas", "3376", "no_va", ago(90)],
+      ["Silvia Guerrero Peña", "8140", "pendiente", null], ["Raúl Cortés Fuentes", "2265", "pendiente", null],
+      ["Martha Alicia Ríos León", "1593", "pendiente", null], ["Héctor Vázquez Ibarra", "4418", "pendiente", null],
+      ["Josefina Campos Luna", "7027", "camino", ago(3)], ["Ernesto Silva Montes", "5631", "pendiente", null],
+      ["Dolores Estrada Cano", "8854", "pendiente", null], ["Jorge Alberto Rosas Soto", "4769", "pendiente", null],
+      ["Yolanda Mejía Paredes", "1382", "pendiente", null], ["Salvador Ochoa Bravo", "2917", "pendiente", null],
+      ["Irma Contreras Vega", "9046", "pendiente", null], ["Arturo Pineda Lara", "3558", "pendiente", null]
     ];
-    const manana = ["Teresa Morales Jiménez", "Roberto Díaz Herrera", "Gloria Andrade Serrano", "Ramón Juárez Olvera"];
-    const rows = hoy.map((r, i) => [t, SLOTS[i], ...r])
-      .concat(manana.map((n, i) => [m, SLOTS[i], n, "1689740" + (1204 + i * 1111), "pendiente", null]));
-    return rows.map(([fecha, hora, nombre, nss, estado, avisoEn]) => ({ id: fecha + "|" + hora + "|" + nss, fecha, hora, nombre, nss, estado, avisoEn }));
+    const manana = [["Teresa Morales Jiménez", "1204"], ["Roberto Díaz Herrera", "8830"], ["Gloria Andrade Serrano", "3426"], ["Ramón Juárez Olvera", "4537"]];
+    return hoy.map((r, i) => [t, SLOTS[i], ...r]).concat(manana.map((r, i) => [m, SLOTS[i], r[0], r[1], "pendiente", null]))
+      .map(([fecha, hora, nombre, nss4, estado, avisoEn]) => ({ id: fecha + "|" + hora + "|" + nss4, fecha, hora, nombre, nss4, estado, avisoEn }));
   }
   let mem = null;
-  function load() {
-    try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch (e) {}
-    if (!mem) mem = { citas: sample() };
-    return mem;
-  }
-  function save(db) { mem = db; try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} }
-  function setEstado(id, estado) {
-    const db = load(); const c = db.citas.find(x => x.id === id); if (!c) return;
-    c.estado = estado; c.avisoEn = new Date().toISOString(); save(db);
-  }
+  const dload = () => { try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch (e) {} if (!mem) mem = { citas: sample() }; return mem; };
+  const dsave = db => { mem = db; try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
+  const pub = c => ({ id: c.id, fecha: c.fecha, hora: c.hora, nombre: c.nombre, estado: c.estado });
 
-  const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
-  const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  const Demo = {
+    async buscar(q, d4) {
+      const words = norm(q).split(/\s+/).filter(w => w.length >= 2), t = today();
+      return dload().citas.filter(c => c.fecha >= t && c.nss4 === d4 && words.every(w => norm(c.nombre).split(/\s+/).some(n => n.startsWith(w))))
+        .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora)).map(pub);
+    },
+    async avisar(id, d4, estado) {
+      const db = dload(), c = db.citas.find(x => x.id === id);
+      if (!c || c.nss4 !== d4 || c.estado === "llego") return null;
+      c.estado = estado; c.avisoEn = new Date().toISOString(); dsave(db); return estado;
+    },
+    async sesion() { try { return sessionStorage.getItem(KEY + "-pin") === "ok"; } catch (e) { return false; } },
+    async entrar(user, pass) { if (pass !== PIN_PRUEBA) return false; try { sessionStorage.setItem(KEY + "-pin", "ok"); } catch (e) {} return true; },
+    async salir() { try { sessionStorage.removeItem(KEY + "-pin"); } catch (e) {} },
+    async dia(day) { return dload().citas.filter(c => c.fecha === day).sort((a, b) => a.hora.localeCompare(b.hora)); },
+    async marcar(id, estado) { const db = dload(), c = db.citas.find(x => x.id === id); if (c) { c.estado = estado; c.avisoEn = new Date().toISOString(); dsave(db); } },
+    async guardar(rows) {
+      const db = dload(), days = new Set(rows.map(r => r.fecha));
+      const prev = new Map(db.citas.map(c => [c.fecha + "|" + c.hora + "|" + c.nss4, c]));
+      db.citas = db.citas.filter(c => !days.has(c.fecha)).concat(rows.map(r => {
+        const id = r.fecha + "|" + r.hora + "|" + r.nss4, old = prev.get(id);
+        return { id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nss4: r.nss4, estado: old ? old.estado : "pendiente", avisoEn: old ? old.avisoEn : null };
+      }));
+      dsave(db);
+    },
+    escuchar(cb) { window.addEventListener("storage", e => { if (e.key === KEY) cb(); }); },
+    async reiniciar() { dsave({ citas: sample() }); }
+  };
+
+  // ---------- almacén real (Supabase) ----------
+  const fix = r => ({ id: r.id, fecha: r.fecha, hora: String(r.hora).slice(0, 5), nombre: r.nombre, nss4: r.nss4, estado: r.estado, avisoEn: r.aviso_en || null });
+  const ok = ({ data, error }) => { if (error) throw error; return data; };
+  const Real = {
+    async buscar(q, d4) { return ok(await sb.rpc("buscar_cita", { p_nombre: q, p_nss4: d4 })).map(fix); },
+    async avisar(id, d4, estado) { return ok(await sb.rpc("avisar_cita", { p_id: id, p_nss4: d4, p_estado: estado })); },
+    async sesion() { const { data } = await sb.auth.getSession(); return !!data.session; },
+    async entrar(email, pass) { const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password: pass }); return !error; },
+    async salir() { await sb.auth.signOut(); },
+    async dia(day) { return ok(await sb.from("citas").select("id,fecha,hora,nombre,nss4,estado,aviso_en").eq("fecha", day).order("hora")).map(fix); },
+    async marcar(id, estado) { ok(await sb.from("citas").update({ estado, aviso_en: new Date().toISOString() }).eq("id", id)); },
+    async guardar(rows) {
+      const days = [...new Set(rows.map(r => r.fecha))];
+      const old = ok(await sb.from("citas").select("fecha,hora,nss4,estado,aviso_en").in("fecha", days));
+      const prev = new Map(old.map(c => [c.fecha + "|" + String(c.hora).slice(0, 5) + "|" + c.nss4, c]));
+      ok(await sb.from("citas").delete().in("fecha", days));
+      ok(await sb.from("citas").insert(rows.map(r => {
+        const o = prev.get(r.fecha + "|" + r.hora + "|" + r.nss4);
+        return { fecha: r.fecha, hora: r.hora, nombre: r.nombre, nss4: r.nss4, estado: o ? o.estado : "pendiente", aviso_en: o ? o.aviso_en : null };
+      })));
+    },
+    escuchar(cb) { sb.channel("citas").on("postgres_changes", { event: "*", schema: "public", table: "citas" }, () => cb()).subscribe(); }
+  };
+  const store = REAL ? Real : Demo;
+
   const app = document.getElementById("app");
   const $ = id => document.getElementById(id);
   const on = (id, fn) => { const el = $(id); if (el) el.addEventListener("click", fn); };
+  const busy = () => app.querySelectorAll("button").forEach(b => { b.disabled = true; });
+  const NET = "No se pudo conectar. Revise su internet e intente de nuevo.";
 
   function topBar(right) {
     return '<header class="top"><div class="wrap' + (view === "adm" ? " wide" : "") + '"><div class="mark">' + CROSS + '</div>' +
       '<div class="id"><span class="doc">' + CLINIC.doctor + '</span><span class="place">' + CLINIC.lugar + '</span></div>' +
       (right ? '<div class="right">' + right + '</div>' : '') + '</div></header>';
   }
-  function phoneBlock() {
-    return '<div class="phone"><div class="ic">' + ic("phone") + '</div><div class="txt"><span>¿Tiene dudas? Llame al consultorio</span>' +
-      '<a href="tel:+52' + CLINIC.tel.replace(/\s/g, "") + '">' + CLINIC.tel + '</a></div></div>';
-  }
+  const errBox = msg => msg ? '<div class="err" role="alert">' + ic("alert") + '<span>' + msg + '</span></div>' : '';
 
   // ---------- paciente ----------
   const fresh = () => ({ step: "inicio", q: "", d4: "", found: [], sel: null, err: "" });
@@ -322,9 +363,10 @@ tr.bad td { color: var(--error); background: #FDECEA; }
 
   function renderPatient() {
     let h = topBar("") + '<main class="wrap">';
+    const sel = pac.found.find(c => c.id === pac.sel);
     if (pac.step === "inicio") {
       h += '<div class="lead"><h1>¿Va a venir a su cita?</h1><p>Avísele al doctor si ya va en camino o si ya no puede venir.</p></div>' +
-        '<button class="btn-xl btn-blue" id="go-search" type="button">' + ic("search") + 'Buscar mi cita</button>' + phoneBlock();
+        '<button class="btn-xl btn-blue" id="go-search" type="button">' + ic("search") + 'Buscar mi cita</button>';
     } else if (pac.step === "buscar") {
       h += '<div class="lead"><span class="step">Paso 1 de 2</span><h1>Buscar mi cita</h1></div>' +
         '<form class="stack" id="f-search" novalidate>' +
@@ -332,15 +374,13 @@ tr.bad td { color: var(--error); background: #FDECEA; }
         '<input class="input" id="q" autocomplete="name" autocapitalize="words" value="' + esc(pac.q) + '"></div>' +
         '<div class="field"><label for="d4">Últimos 4 números de su seguro social</label><span class="help">Los encuentra en su carnet del IMSS</span>' +
         '<input class="input digits" id="d4" inputmode="numeric" maxlength="4" autocomplete="off" value="' + esc(pac.d4) + '"></div>' +
-        (pac.err ? '<div class="err" role="alert">' + ic("alert") + '<span>' + pac.err + '</span></div>' : '') +
+        errBox(pac.err) +
         '<button class="btn-xl btn-blue" type="submit">' + ic("search") + 'Buscar</button>' +
         '<button class="btn-xl btn-plain" type="button" id="back">' + ic("back") + 'Regresar</button>' +
-        '<p class="tip">Prueba: escriba <b>María López</b> y <b>4821</b>.</p></form>';
+        (REAL ? '' : '<p class="tip">Prueba: escriba <b>María López</b> y <b>4821</b>.</p>') + '</form>';
     } else if (pac.step === "cita") {
-      const db = load();
-      const list = pac.found.map(id => db.citas.find(c => c.id === id)).filter(Boolean);
-      h += '<div class="lead"><span class="step">Paso 2 de 2</span><h1>' + (list.length > 1 ? "Sus citas" : "Su cita") + '</h1></div>';
-      list.forEach(c => {
+      h += '<div class="lead"><span class="step">Paso 2 de 2</span><h1>' + (pac.found.length > 1 ? "Sus citas" : "Su cita") + '</h1></div>' + errBox(pac.err);
+      pac.found.forEach(c => {
         h += '<section class="appt"><div class="who">' + esc(c.nombre) + '</div><div class="body">' +
           '<div class="line">' + ic("cal") + '<span class="date">' + longDay(c.fecha) + '</span></div>' +
           '<div class="line">' + ic("clock") + '<span class="time">' + ampm(c.hora) + '</span></div>';
@@ -357,22 +397,32 @@ tr.bad td { color: var(--error); background: #FDECEA; }
       });
       h += '<button class="btn-xl btn-plain" type="button" id="restart">' + ic("back") + 'Salir</button>';
     } else if (pac.step === "confirmar_no") {
-      const c = load().citas.find(x => x.id === pac.sel);
-      h += '<div class="lead"><h1>¿Seguro que ya no va a venir?</h1><p>Su cita del ' + longDay(c.fecha).toLowerCase() + ' a las ' + ampm(c.hora) + ' se le dará a otro paciente.</p></div>' +
+      h += '<div class="lead"><h1>¿Seguro que ya no va a venir?</h1><p>Su cita del ' + longDay(sel.fecha).toLowerCase() + ' a las ' + ampm(sel.hora) + ' se le dará a otro paciente.</p></div>' +
+        errBox(pac.err) +
         '<div class="actions"><button class="btn-xl btn-orange" type="button" id="yes-no">' + ic("check") + 'Sí, ya no voy</button>' +
         '<button class="btn-xl btn-plain" type="button" id="cancel-no">' + ic("back") + 'No, regresar</button></div>';
     } else if (pac.step === "listo") {
-      const c = load().citas.find(x => x.id === pac.sel);
-      const camino = c.estado === "camino";
+      const camino = sel.estado === "camino";
       h += '<div class="done"><div class="ok ' + (camino ? "blue" : "orange") + '">' + ic("check") + '</div>' +
         '<h1>Listo, ya le avisamos al doctor</h1>' +
-        '<p>' + (camino ? "Le esperan a las " + ampm(c.hora) + ". Que tenga buen viaje." : "Gracias por avisar. Si necesita otra cita, llame al consultorio.") + '</p></div>' +
-        '<button class="btn-xl btn-plain" type="button" id="restart">Terminar</button>' + phoneBlock();
+        '<p>' + (camino ? "Le esperan a las " + ampm(sel.hora) + ". Que tenga buen viaje." : "Gracias por avisar.") + '</p></div>' +
+        '<button class="btn-xl btn-plain" type="button" id="restart">Terminar</button>';
     }
-    h += '</main><footer class="foot"><div class="wrap"><span>Versión de prueba con citas de ejemplo.</span><button class="link" type="button" id="to-adm">Entrar como consultorio</button></div></footer>';
+    h += '</main>';
+    if (!REAL) h += '<footer class="foot"><div class="wrap"><span>Versión de prueba con citas de ejemplo.</span><button class="link" type="button" id="to-adm">Entrar como consultorio</button></div></footer>';
     app.innerHTML = h;
     window.scrollTo(0, 0);
     wirePatient();
+  }
+
+  async function avisar(id, estado) {
+    busy();
+    try {
+      const r = await store.avisar(id, pac.d4, estado);
+      if (!r) { pac.err = "Esta cita ya no se puede cambiar."; pac.step = "cita"; return renderPatient(); }
+      pac.found.find(c => c.id === id).estado = r; pac.sel = id; pac.err = ""; pac.step = "listo";
+    } catch (e) { pac.err = NET; }
+    renderPatient();
   }
 
   function wirePatient() {
@@ -380,52 +430,59 @@ tr.bad td { color: var(--error); background: #FDECEA; }
     on("go-search", () => { pac.step = "buscar"; renderPatient(); $("q").focus(); });
     on("back", () => { pac = fresh(); renderPatient(); });
     on("restart", () => { pac = fresh(); renderPatient(); });
-    on("cancel-no", () => { pac.step = "cita"; renderPatient(); });
-    on("yes-no", () => { setEstado(pac.sel, "no_va"); pac.step = "listo"; renderPatient(); });
-    app.querySelectorAll("[data-camino]").forEach(b => b.addEventListener("click", () => { pac.sel = b.dataset.camino; setEstado(pac.sel, "camino"); pac.step = "listo"; renderPatient(); }));
-    app.querySelectorAll("[data-nova]").forEach(b => b.addEventListener("click", () => { pac.sel = b.dataset.nova; pac.step = "confirmar_no"; renderPatient(); }));
+    on("cancel-no", () => { pac.step = "cita"; pac.err = ""; renderPatient(); });
+    on("yes-no", () => avisar(pac.sel, "no_va"));
+    app.querySelectorAll("[data-camino]").forEach(b => b.addEventListener("click", () => avisar(b.dataset.camino, "camino")));
+    app.querySelectorAll("[data-nova]").forEach(b => b.addEventListener("click", () => { pac.sel = b.dataset.nova; pac.err = ""; pac.step = "confirmar_no"; renderPatient(); }));
     const f = $("f-search");
     if (!f) return;
     $("d4").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); });
-    f.addEventListener("submit", e => {
+    f.addEventListener("submit", async e => {
       e.preventDefault();
       pac.q = $("q").value; pac.d4 = $("d4").value;
-      const words = norm(pac.q).split(/\s+/).filter(w => w.length >= 2);
-      if (!words.length) { pac.err = "Escriba su nombre."; return renderPatient(); }
+      if (!norm(pac.q).split(/\s+/).some(w => w.length >= 2)) { pac.err = "Escriba su nombre."; return renderPatient(); }
       if (pac.d4.length !== 4) { pac.err = "Escriba los 4 números de su seguro social."; return renderPatient(); }
-      const t = today();
-      const found = load().citas.filter(c => {
-        if (c.fecha < t || c.nss.slice(-4) !== pac.d4) return false;
-        const nameWords = norm(c.nombre).split(/\s+/);
-        return words.every(w => nameWords.some(n => n.startsWith(w)));
-      }).sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
-      if (!found.length) { pac.err = "No encontramos su cita. Revise su nombre y los 4 números, o llame al consultorio."; return renderPatient(); }
-      pac.err = ""; pac.found = found.map(c => c.id); pac.step = "cita"; renderPatient();
+      busy();
+      try {
+        const found = await store.buscar(pac.q, pac.d4);
+        if (!found.length) { pac.err = "No encontramos su cita. Revise su nombre y los 4 números."; return renderPatient(); }
+        pac.err = ""; pac.found = found; pac.step = "cita";
+      } catch (x) { pac.err = NET; }
+      renderPatient();
     });
   }
 
   // ---------- consultorio ----------
-  let adm = { unlocked: false, tab: "agenda", day: today(), pasteText: "", pasteDay: today(), preview: null, msg: "" };
-  try { adm.unlocked = sessionStorage.getItem(KEY + "-pin") === "ok"; } catch (e) {}
+  let adm = { unlocked: false, tab: "agenda", day: today(), list: null, loadErr: "", pasteText: "", pasteDay: today(), preview: null, msg: "" };
   const LABEL = { pendiente: "Sin avisar", camino: "En camino", no_va: "No va", llego: "Ya llegó" };
 
+  async function loadDay() {
+    try { adm.list = await store.dia(adm.day); adm.loadErr = ""; }
+    catch (e) { adm.loadErr = "No se pudo cargar la agenda. Revise el internet."; }
+    if (view === "adm" && adm.unlocked && adm.tab === "agenda") renderAdmin();
+  }
+
   function renderAdmin() {
-    const exit = '<button class="link" type="button" id="to-pac">Ver como paciente</button>';
+    const right = REAL ? (adm.unlocked ? '<button class="link" type="button" id="logout">Salir</button>' : '') : '<button class="link" type="button" id="to-pac">Ver como paciente</button>';
     if (!adm.unlocked) {
-      app.innerHTML = topBar(exit) + '<main class="wrap lock"><div class="lead"><h1>Panel del consultorio</h1><p>Escriba el PIN para entrar.</p></div>' +
-        '<form class="stack" id="f-pin"><div class="field"><label for="pin">PIN</label><input class="input digits" id="pin" inputmode="numeric" maxlength="4" type="password" autocomplete="off"></div>' +
-        (adm.msg ? '<div class="err" role="alert">' + ic("alert") + '<span>' + adm.msg + '</span></div>' : '') +
-        '<button class="btn-xl btn-blue" type="submit">Entrar</button><p class="tip">PIN de prueba: <b>1234</b></p></form></main>';
+      app.innerHTML = topBar(right) + '<main class="wrap lock"><div class="lead"><h1>Panel del consultorio</h1><p>' + (REAL ? "Entre con su correo y contraseña." : "Escriba el PIN para entrar.") + '</p></div>' +
+        '<form class="stack" id="f-login">' +
+        (REAL ? '<div class="field"><label for="email">Correo</label><input class="input" id="email" type="email" autocomplete="username" style="font-size:20px"></div>' +
+                '<div class="field"><label for="pass">Contraseña</label><input class="input" id="pass" type="password" autocomplete="current-password" style="font-size:20px"></div>'
+              : '<div class="field"><label for="pass">PIN</label><input class="input digits" id="pass" inputmode="numeric" maxlength="4" type="password" autocomplete="off"></div>') +
+        errBox(adm.msg) +
+        '<button class="btn-xl btn-blue" type="submit">Entrar</button>' + (REAL ? '' : '<p class="tip">PIN de prueba: <b>1234</b></p>') + '</form></main>';
       on("to-pac", () => go("pac"));
-      $("f-pin").addEventListener("submit", e => {
-        e.preventDefault();
-        if ($("pin").value === PIN) { adm.unlocked = true; adm.msg = ""; try { sessionStorage.setItem(KEY + "-pin", "ok"); } catch (x) {} }
-        else adm.msg = "PIN incorrecto. Intente de nuevo.";
-        renderAdmin();
+      $("f-login").addEventListener("submit", async e => {
+        e.preventDefault(); busy();
+        let okLogin = false;
+        try { okLogin = await store.entrar(REAL ? $("email").value : "", $("pass").value); } catch (x) {}
+        if (okLogin) { adm.unlocked = true; adm.msg = ""; startAdmin(); }
+        else { adm.msg = REAL ? "Correo o contraseña incorrectos." : "PIN incorrecto. Intente de nuevo."; renderAdmin(); }
       });
       return;
     }
-    let h = topBar(exit) + '<main class="wrap wide admin"><nav class="nav" role="tablist">' +
+    let h = topBar(right) + '<main class="wrap wide admin"><nav class="nav" role="tablist">' +
       [["agenda", "Agenda"], ["pegar", "Cargar citas"], ["qr", "Cartel con QR"]].map(([k, l]) => '<button role="tab" type="button" data-tab="' + k + '" aria-selected="' + (adm.tab === k) + '">' + l + '</button>').join("") +
       '</nav>';
     h += adm.tab === "agenda" ? agendaHTML() : adm.tab === "pegar" ? pasteHTML() : qrHTML();
@@ -435,12 +492,15 @@ tr.bad td { color: var(--error); background: #FDECEA; }
   }
 
   function agendaHTML() {
-    const list = load().citas.filter(c => c.fecha === adm.day).sort((a, b) => a.hora.localeCompare(b.hora));
+    let h = '<div class="bar"><div><h2>' + longDay(adm.day) + '</h2><span class="sub">' + (adm.day === today() ? "Hoy · " : "") +
+      (adm.list ? adm.list.length + ' citas de ' + SLOTS.length + ' lugares' : 'Cargando…') + '</span></div>' +
+      '<input class="date-in" type="date" id="day" value="' + adm.day + '" aria-label="Cambiar día"></div>';
+    if (adm.loadErr) h += errBox(adm.loadErr);
+    if (!adm.list) return h;
+    const list = adm.list;
     const n = { camino: 0, pendiente: 0, no_va: 0, llego: 0 };
     list.forEach(c => n[c.estado]++);
     const isToday = adm.day === today(), now = nowHHMM();
-    let h = '<div class="bar"><div><h2>' + longDay(adm.day) + '</h2><span class="sub">' + (isToday ? "Hoy · " : "") + list.length + ' citas de ' + SLOTS.length + ' lugares</span></div>' +
-      '<input class="date-in" type="date" id="day" value="' + adm.day + '" aria-label="Cambiar día"></div>';
     h += '<div class="stats">' + ["camino", "pendiente", "no_va", "llego"].map(k => '<div class="stat ' + k + '"><b>' + n[k] + '</b><span>' + LABEL[k] + '</span></div>').join("") + '</div>';
     h += '<div class="list" aria-live="polite">';
     if (!list.length) h += '<div class="empty">No hay citas este día. Use <b>Cargar citas</b> para agregarlas.</div>';
@@ -454,10 +514,11 @@ tr.bad td { color: var(--error); background: #FDECEA; }
         ? '<button class="sbtn ghost" type="button" data-undo="' + esc(c.id) + '">Deshacer</button>'
         : '<button class="sbtn fill" type="button" data-llego="' + esc(c.id) + '">Llegó</button>';
       h += '<div class="row ' + c.estado + (current ? " now" : "") + '"><span class="hr">' + c.hora + '</span>' +
-        '<div style="min-width:0"><div class="name">' + esc(c.nombre) + '</div><div class="meta">NSS ••••' + esc(c.nss.slice(-4)) + '</div></div>' +
+        '<div style="min-width:0"><div class="name">' + esc(c.nombre) + '</div><div class="meta">NSS ••••' + esc(c.nss4) + '</div></div>' +
         '<div class="right">' + tag + btn + '</div></div>';
     });
-    h += '</div><div class="row-btns"><button class="mbtn line" type="button" id="reset">Restaurar citas de ejemplo</button></div>';
+    h += '</div>';
+    if (!REAL) h += '<div class="row-btns"><button class="mbtn line" type="button" id="reset">Restaurar citas de ejemplo</button></div>';
     return h;
   }
 
@@ -489,7 +550,7 @@ tr.bad td { color: var(--error); background: #FDECEA; }
       if (!nombre) err.push("falta el nombre");
       if (!nss) err.push("falta el NSS");
       if (isNaN(fromYmd(fecha).getTime())) err.push("fecha inválida");
-      out.push({ linea: i + 1, fecha, hora, nombre, nss, err });
+      out.push({ linea: i + 1, fecha, hora, nombre, nss4: nss ? nss.slice(-4) : null, err });
     });
     // Si la lista no trae horas, se reparten solas en el horario, en el orden pegado
     if (out.length && !out.some(r => r.hora)) {
@@ -506,74 +567,78 @@ tr.bad td { color: var(--error); background: #FDECEA; }
 
   function pasteHTML() {
     let h = '<section class="stack paste"><div class="bar"><div><h2>Cargar citas</h2><span class="sub">Copie la lista del sistema del IMSS o de Excel y péguela aquí.</span></div></div>' +
-      '<p class="help">Cada renglón necesita <b>nombre</b> y <b>número de seguro social</b>. Si la lista no trae horas, se reparten solas de <b>8:00 a 2:00</b>, una cada 15 minutos (hasta ' + SLOTS.length + ' pacientes), en el orden de la lista.</p>' +
+      '<p class="help">Cada renglón necesita <b>nombre</b> y <b>número de seguro social</b> (solo se guardan los últimos 4 números). Si la lista no trae horas, se reparten solas de <b>8:00 a 2:00</b>, una consulta cada 15 minutos (hasta ' + SLOTS.length + ' pacientes), en el orden de la lista. Si vuelve a cargar un día, la lista nueva reemplaza a la anterior.</p>' +
       '<div class="row-btns"><label for="pday" style="font-weight:700;font-size:17px">Fecha de las citas</label><input class="date-in" type="date" id="pday" value="' + adm.pasteDay + '">' +
       '<button class="mbtn line" type="button" id="fill-sample">Usar lista de ejemplo</button></div>' +
       '<textarea id="ptext" spellcheck="false" aria-label="Lista de citas" placeholder="PEREZ GARCIA JUAN    12345678901">' + esc(adm.pasteText) + '</textarea>' +
       '<div class="row-btns"><button class="mbtn" type="button" id="do-preview">Revisar lista</button></div>';
     if (adm.preview) {
-      const ok = adm.preview.filter(r => !r.err.length);
-      const bad = adm.preview.length - ok.length;
-      h += '<p style="font-weight:700">' + ok.length + ' citas listas' + (bad ? ' · <span style="color:var(--error)">' + bad + ' con problemas (no se guardarán)</span>' : '') + '</p>' +
+      const good = adm.preview.filter(r => !r.err.length);
+      const bad = adm.preview.length - good.length;
+      h += '<p style="font-weight:700">' + good.length + ' citas listas' + (bad ? ' · <span style="color:var(--error)">' + bad + ' con problemas (no se guardarán)</span>' : '') + '</p>' +
         '<div class="tbl"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>NSS</th><th>Revisión</th></tr></thead><tbody>' +
-        adm.preview.map(r => '<tr class="' + (r.err.length ? "bad" : "") + '"><td class="mono">' + esc(r.fecha) + '</td><td class="mono">' + esc(r.hora || "—") + '</td><td>' + esc(r.nombre || "—") + '</td><td class="mono">' + esc(r.nss || "—") + '</td><td>' + (r.err.length ? "Renglón " + r.linea + ": " + r.err.join(", ") : "Correcto") + '</td></tr>').join("") +
+        adm.preview.map(r => '<tr class="' + (r.err.length ? "bad" : "") + '"><td class="mono">' + esc(r.fecha) + '</td><td class="mono">' + esc(r.hora || "—") + '</td><td>' + esc(r.nombre || "—") + '</td><td class="mono">' + (r.nss4 ? "••••" + esc(r.nss4) : "—") + '</td><td>' + (r.err.length ? "Renglón " + r.linea + ": " + r.err.join(", ") : "Correcto") + '</td></tr>').join("") +
         '</tbody></table></div>' +
-        '<div class="row-btns"><button class="mbtn orange" type="button" id="do-save"' + (ok.length ? "" : " disabled") + '>Guardar ' + ok.length + ' citas</button></div>';
+        '<div class="row-btns"><button class="mbtn orange" type="button" id="do-save"' + (good.length ? "" : " disabled") + '>Guardar ' + good.length + ' citas</button></div>';
     }
-    if (adm.msg) h += '<p class="okmsg" role="status">' + adm.msg + '</p>';
+    h += errBox(adm.msg);
     return h + '</section>';
   }
 
-  function savePreview() {
-    const db = load();
-    const ok = adm.preview.filter(r => !r.err.length);
-    const days = new Set(ok.map(r => r.fecha));
-    const prev = new Map(db.citas.map(c => [c.id, c]));
-    db.citas = db.citas.filter(c => !days.has(c.fecha));
-    ok.forEach(r => {
-      const id = r.fecha + "|" + r.hora + "|" + r.nss;
-      const old = prev.get(id);
-      db.citas.push({ id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nss: r.nss, estado: old ? old.estado : "pendiente", avisoEn: old ? old.avisoEn : null });
-    });
-    save(db);
-    adm.preview = null; adm.pasteText = "";
-    adm.day = [...days].sort()[0] || adm.day;
-  }
-
   function qrHTML() {
-    return '<section class="poster"><div><span class="eyebrow">' + CLINIC.doctor + ' · Consultorio 8</span><h2>¿Tiene cita? Avise si viene.</h2>' +
+    return '<section class="poster"><div><span class="eyebrow">' + CLINIC.doctor + ' · ' + CLINIC.lugar.split("·").pop().trim() + '</span><h2>¿Tiene cita? Avise si viene.</h2>' +
       '<ol><li>Apunte la cámara de su celular a este código.</li><li>Guarde la página para el día de su cita.</li><li>Busque su nombre y toque <b>Voy en camino</b> o <b>Ya no voy a ir</b>.</li></ol>' +
-      '<p class="small">Ejemplo del cartel. En la versión real el código abre la página de sus pacientes.</p></div>' +
-      '<div class="qrbox" id="qr" role="img" aria-label="Código QR de ejemplo"></div></section>';
+      '<p class="small">' + PATIENT_URL.replace(/^https:\/\//, "") + '</p></div>' +
+      '<div class="qrbox" id="qr" role="img" aria-label="Código QR de la página para pacientes"></div></section>';
   }
+  const PATIENT_URL = "https://areijond-bit.github.io/avisa-tu-cita/";
 
   function wireAdmin() {
     on("to-pac", () => go("pac"));
-    app.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => { adm.tab = b.dataset.tab; adm.msg = ""; renderAdmin(); }));
+    on("logout", async () => { await store.salir(); adm.unlocked = false; renderAdmin(); });
+    app.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => { adm.tab = b.dataset.tab; adm.msg = ""; renderAdmin(); if (adm.tab === "agenda") loadDay(); }));
     const day = $("day");
-    if (day) day.addEventListener("change", () => { if (day.value) { adm.day = day.value; renderAdmin(); } });
-    app.querySelectorAll("[data-llego]").forEach(b => b.addEventListener("click", () => { setEstado(b.dataset.llego, "llego"); renderAdmin(); }));
-    app.querySelectorAll("[data-undo]").forEach(b => b.addEventListener("click", () => { setEstado(b.dataset.undo, "pendiente"); renderAdmin(); }));
-    on("reset", () => { save({ citas: sample() }); adm.day = today(); renderAdmin(); });
+    if (day) day.addEventListener("change", () => { if (day.value) { adm.day = day.value; adm.list = null; renderAdmin(); loadDay(); } });
+    app.querySelectorAll("[data-llego]").forEach(b => b.addEventListener("click", async () => { busy(); try { await store.marcar(b.dataset.llego, "llego"); } catch (e) {} loadDay(); }));
+    app.querySelectorAll("[data-undo]").forEach(b => b.addEventListener("click", async () => { busy(); try { await store.marcar(b.dataset.undo, "pendiente"); } catch (e) {} loadDay(); }));
+    on("reset", async () => { await Demo.reiniciar(); adm.day = today(); loadDay(); });
     const pt = $("ptext");
     if (pt) pt.addEventListener("input", () => { adm.pasteText = pt.value; });
     const pd = $("pday");
     if (pd) pd.addEventListener("change", () => { adm.pasteDay = pd.value || today(); });
     on("fill-sample", () => { adm.pasteText = SAMPLE_PASTE; adm.preview = null; adm.msg = ""; renderAdmin(); });
     on("do-preview", () => { adm.msg = ""; adm.preview = parseAgenda(adm.pasteText, adm.pasteDay); renderAdmin(); });
-    on("do-save", () => { savePreview(); adm.tab = "agenda"; renderAdmin(); });
+    on("do-save", async () => {
+      const good = adm.preview.filter(r => !r.err.length);
+      busy();
+      try {
+        await store.guardar(good);
+        adm.day = [...new Set(good.map(r => r.fecha))].sort()[0] || adm.day;
+        adm.preview = null; adm.pasteText = ""; adm.tab = "agenda"; adm.list = null; adm.msg = "";
+        renderAdmin(); loadDay();
+      } catch (e) { adm.msg = "No se pudieron guardar las citas. Revise el internet e intente de nuevo."; renderAdmin(); }
+    });
     const qr = $("qr");
-    if (qr && window.QRCode) new QRCode(qr, { text: "https://areijond-bit.github.io/avisa-tu-cita/", width: 400, height: 400, colorDark: "#0F1B2D", colorLight: "#FFFFFF" });
+    if (qr && window.QRCode) new QRCode(qr, { text: PATIENT_URL, width: 400, height: 400, colorDark: "#0F1B2D", colorLight: "#FFFFFF" });
+  }
+
+  let listening = false;
+  function startAdmin() {
+    if (!listening) { store.escuchar(() => { if (adm.unlocked) loadDay(); }); listening = true; }
+    adm.list = null; renderAdmin(); loadDay();
   }
 
   // ---------- vistas ----------
   let view = location.hash === "#consultorio" ? "adm" : "pac";
-  function go(v) { view = v; render(); window.scrollTo(0, 0); }
-  function render() { view === "pac" ? renderPatient() : renderAdmin(); }
-  // si el consultorio tiene otra pestaña abierta, se actualiza sola
-  window.addEventListener("storage", e => { if (e.key === KEY && view === "adm") renderAdmin(); });
-  setInterval(() => { if (view === "adm" && adm.tab === "agenda" && adm.unlocked) renderAdmin(); }, 60000);
-  render();
+  async function go(v) {
+    view = v; window.scrollTo(0, 0);
+    if (v === "pac") return renderPatient();
+    adm.unlocked = await store.sesion().catch(() => false);
+    adm.unlocked ? startAdmin() : renderAdmin();
+  }
+  window.addEventListener("hashchange", () => go(location.hash === "#consultorio" ? "adm" : "pac"));
+  setInterval(() => { if (view === "adm" && adm.unlocked && adm.tab === "agenda") loadDay(); }, 60000);
+  go(view);
 })();
 </script>
 
