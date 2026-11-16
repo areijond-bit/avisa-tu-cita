@@ -299,6 +299,9 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 
 /* calendario */
 .pcount { font-weight: 700; color: var(--blue); }
+.telform.reag { gap: 10px; border-left: 4px solid var(--blue); }
+.telform .lbl { font-weight: 700; min-width: 110px; }
+.menu-i svg.i { width: 18px; height: 18px; color: var(--blue); }
 
 /* pacientes: borrar y seleccionar */
 .pbar { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
@@ -600,7 +603,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   async function loadDay() {
     try { adm.list = (await staff("agenda_dia", { p_fecha: adm.day })).citas; adm.loadErr = ""; }
     catch (e) { if (e.message !== "clave") adm.loadErr = "No se pudo cargar la agenda. Revise el internet."; }
-    const ocupado = adm.editTel || adm.editName || adm.addSlot || adm.menu || drag || dp.open;
+    const ocupado = adm.editTel || adm.editName || adm.reag || adm.addSlot || adm.menu || drag || dp.open;
     if (view === "adm" && adm.unlocked && adm.tab === "agenda" && !ocupado) renderAdmin();
   }
   async function loadPacientes() {
@@ -712,7 +715,39 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
         '<button class="mbtn" type="submit">Guardar</button><button class="mbtn line" type="button" id="tel-cancel">Cancelar</button></div>' +
         '<span class="sub">Se queda guardado para las próximas citas de este paciente.</span></form>';
     }
+    if (adm.reag && adm.reag.id === c.id) h += reagHTML(c);
     return h;
+  }
+
+  // Reagendar: escoger otra fecha y una hora libre de ese día
+  function reagHTML(c) {
+    const r = adm.reag;
+    const opts = !r.ocupadas ? '<option value="">Cargando horas…</option>'
+      : '<option value="">Escoja la hora…</option>' + HORAS.map(x => {
+          const ocup = r.ocupadas.has(x);
+          return '<option value="' + x + '"' + (x === r.hora ? ' selected' : '') + (ocup ? ' disabled' : '') + '>' + x + (ocup ? ' · ocupada' : SLOTS.includes(x) ? '' : ' · fuera de horario') + '</option>';
+        }).join("");
+    const libres = r.ocupadas ? SLOTS.filter(s => !r.ocupadas.has(s)).length : null;
+    return '<div class="telform reag"><b>Reagendar a ' + esc(c.nombre) + '</b>' +
+      '<span class="sub">Ahora: ' + longDay(c.fecha) + ' a las ' + ampm(c.hora) + '</span>' +
+      '<div class="row-btns"><span class="lbl">Nueva fecha</span>' + datePicker("reag", r.fecha, "left") + '</div>' +
+      '<div class="row-btns"><label class="lbl" for="reag-h">Hora</label><select class="hsel" id="reag-h" style="max-width:220px"' + (r.ocupadas ? '' : ' disabled') + '>' + opts + '</select>' +
+      (libres !== null ? '<span class="sub">' + libres + ' de ' + SLOTS.length + ' lugares libres ese día</span>' : '') + '</div>' +
+      errBox(r.err) +
+      '<div class="row-btns"><button class="mbtn" type="button" id="reag-ok"' + (r.hora ? '' : ' disabled') + '>Reagendar</button>' +
+      '<button class="mbtn line" type="button" id="reag-cancel">Cancelar</button></div>' +
+      '<span class="sub">Quedará como "No confirmado" para volver a mandarle el WhatsApp con la nueva fecha.</span></div>';
+  }
+  async function cargarOcupadas() {
+    const r = adm.reag; if (!r) return;
+    const fecha = r.fecha;
+    try {
+      const citas = (await staff("agenda_dia", { p_fecha: fecha })).citas;
+      if (!adm.reag || adm.reag.fecha !== fecha) return;
+      r.ocupadas = new Set(citas.filter(x => x.id !== r.id).map(x => x.hora));
+      if (!r.hora || r.ocupadas.has(r.hora)) r.hora = SLOTS.find(s => !r.ocupadas.has(s)) || "";
+    } catch (e) { r.err = "No se pudieron cargar las horas de ese día."; }
+    renderAdmin();
   }
 
   function menuHTML(c) {
@@ -727,6 +762,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     return '<div class="menu" role="menu">' +
       '<button type="button" class="menu-i" role="menuitem" data-act="nombre" data-id="' + c.id + '">Editar nombre</button>' +
       '<button type="button" class="menu-i" role="menuitem" data-act="tel" data-id="' + c.id + '">' + (c.telefono ? 'Cambiar teléfono' : 'Agregar teléfono') + '</button>' +
+      '<button type="button" class="menu-i" role="menuitem" data-act="reag" data-id="' + c.id + '">' + ic("cal") + 'Reagendar para otra fecha</button>' +
       '<div class="menu-sep"></div>' + est + '<div class="menu-sep"></div>' +
       '<button type="button" class="menu-i danger" role="menuitem" data-act="quitar" data-id="' + c.id + '">Quitar de la agenda</button></div>';
   }
@@ -980,13 +1016,14 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   function elegirFecha(id, s) {
     dp.open = null;
     if (id === "day") { adm.day = s; adm.list = null; adm.envio = null; renderAdmin(); loadDay(); }
+    else if (id === "reag") { adm.reag.fecha = s; adm.reag.ocupadas = null; adm.reag.err = ""; renderAdmin(); cargarOcupadas(); }
     else { adm.pasteDay = s; renderAdmin(); }
   }
   function wireDatePicker() {
     app.querySelectorAll("[data-dp]").forEach(b => b.addEventListener("click", e => {
       e.stopPropagation();
       const id = b.dataset.dp;
-      if (dp.open === id) { dp.open = null; } else { dp.open = id; dp.month = (id === "day" ? adm.day : adm.pasteDay).slice(0, 7); }
+      if (dp.open === id) { dp.open = null; } else { dp.open = id; dp.month = (id === "day" ? adm.day : id === "reag" ? adm.reag.fecha : adm.pasteDay).slice(0, 7); }
       renderAdmin();
     }));
     const pop = app.querySelector(".dp-pop");
@@ -1112,6 +1149,11 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       adm.menu = null; adm.confirmQuitar = null;
       if (act === "nombre") { adm.editName = id; adm.editTel = null; renderAdmin(); const n = $("name-in"); if (n) { n.focus(); n.select(); } return; }
       if (act === "tel") { adm.editTel = id; adm.editName = null; renderAdmin(); const t = $("tel-in"); if (t) t.focus(); return; }
+      if (act === "reag") {
+        const c = adm.list.find(x => x.id === id);
+        adm.reag = { id, fecha: addDays(c.fecha, 1), hora: "", ocupadas: null, err: "" };
+        adm.editName = null; adm.editTel = null; renderAdmin(); cargarOcupadas(); return;
+      }
       busy();
       try {
         if (act === "estado") await staff("marcar_cita", { p_id: id, p_estado: b.dataset.est });
@@ -1138,6 +1180,20 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       adm.addSlot = null; adm.pacientes = null; loadDay();
     });
     on("name-cancel", () => { adm.editName = null; renderAdmin(); });
+    const rh = $("reag-h");
+    if (rh) rh.addEventListener("change", () => { adm.reag.hora = rh.value; adm.reag.err = ""; renderAdmin(); });
+    on("reag-cancel", () => { adm.reag = null; renderAdmin(); });
+    on("reag-ok", async () => {
+      const r = adm.reag, c = adm.list.find(x => x.id === r.id);
+      if (!r.hora) return;
+      busy();
+      try {
+        const res = await staff("reagendar_cita", { p_id: r.id, p_fecha: r.fecha, p_hora: r.hora });
+        if (res.error) { r.err = res.error; r.ocupadas = null; renderAdmin(); return cargarOcupadas(); }
+        adm.flash = c.nombre + " se reagendó para el " + longDay(r.fecha).toLowerCase() + " a las " + ampm(r.hora) + ". Ya puede mandarle el WhatsApp con la nueva fecha.";
+      } catch (e) { r.err = NET; return renderAdmin(); }
+      adm.reag = null; loadDay();
+    });
     const fn = $("f-name");
     if (fn) fn.addEventListener("submit", async e => {
       e.preventDefault();
