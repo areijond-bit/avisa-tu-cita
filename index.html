@@ -299,6 +299,61 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 
 /* calendario */
 .pcount { font-weight: 700; color: var(--blue); }
+
+/* agenda por lugares: horas fijas a la izquierda, nombres que se arrastran */
+.board { border: 1px solid var(--line); border-radius: 14px; overflow: visible; }
+.slot { display: grid; grid-template-columns: 84px minmax(0, 1fr); border-top: 1px solid var(--line); min-height: 68px; }
+.slot:first-child { border-top: 0; }
+.slot:first-child .slot-time { border-top-left-radius: 13px; }
+.slot:last-child .slot-time { border-bottom-left-radius: 13px; }
+.slot-time { background: var(--blue-tint); color: var(--blue); font-family: var(--mono); font-weight: 700; font-size: 18px; display: flex; align-items: center; justify-content: center; border-right: 2px solid #C9D8F2; font-variant-numeric: tabular-nums; }
+.slot.now .slot-time { background: var(--blue); color: var(--white); }
+.slot.extra .slot-time { background: var(--orange-tint); color: var(--orange-ink); border-right-color: #F6CFAE; }
+.slot-body { padding: 8px 10px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.slot.over .slot-body { background: var(--blue-tint); box-shadow: inset 0 0 0 2px var(--blue); border-radius: 0 12px 12px 0; }
+.ccard { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); border-left: 5px solid var(--line); }
+.ccard.camino { border-left-color: var(--blue); }
+.ccard.no_va { border-left-color: var(--orange); }
+.ccard.no_va .name { text-decoration: line-through; text-decoration-color: var(--orange); color: var(--muted); }
+.ccard.llego { border-left-color: #1F8A4C; }
+.ccard.dragging { opacity: .35; }
+.ccard.ghost { position: fixed; z-index: 50; pointer-events: none; box-shadow: 0 14px 34px rgba(15, 27, 45, .25); transform: rotate(-1deg); }
+.grip { border: 0; background: var(--soft); color: var(--muted); border-radius: 8px; width: 34px; height: 44px; font-size: 20px; line-height: 1; cursor: grab; touch-action: none; user-select: none; }
+.grip:hover { background: var(--blue-tint); color: var(--blue); }
+.grip:active { cursor: grabbing; }
+.cmain { min-width: 0; }
+.cmain .name { font-weight: 700; font-size: 18px; overflow-wrap: anywhere; }
+.ccard .right { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+.sbtn.att { background: #1F8A4C; border-color: #1F8A4C; color: #FFFFFF; }
+.sbtn.att:hover { background: #176B3A; }
+.menuwrap { position: relative; }
+.dots { width: 40px; height: 40px; border: 0; border-radius: 10px; background: none; color: var(--muted); font-size: 24px; font-weight: 800; line-height: 1; }
+.dots:hover, .dots[aria-expanded="true"] { background: var(--soft); color: var(--ink); }
+.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 250px; background: var(--white); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 16px 36px rgba(15, 27, 45, .18); padding: 6px; display: flex; flex-direction: column; }
+.menu-i { display: flex; align-items: center; gap: 10px; text-align: left; border: 0; background: none; padding: 11px 12px; border-radius: 10px; font-size: 16px; font-weight: 600; color: var(--ink); }
+.menu-i:hover { background: var(--soft); }
+.menu-i.danger { color: var(--error); }
+.menu-i.danger:hover { background: #FDECEA; }
+.menu-sep { height: 1px; background: var(--line); margin: 4px 6px; }
+.menu-q { margin: 0; padding: 10px 12px 4px; font-weight: 700; font-size: 16px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.dot.camino { background: var(--blue); }
+.dot.pendiente { background: var(--muted); }
+.dot.no_va { background: var(--orange); }
+.dot.llego { background: #1F8A4C; }
+.libre { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 6px; color: var(--muted); }
+.libre span { font-style: italic; }
+.addslot { border: 2px dashed var(--line); background: none; color: var(--blue); font-weight: 700; font-size: 15px; padding: 8px 14px; border-radius: 10px; }
+.addslot:hover { border-color: var(--blue); background: var(--blue-tint); }
+.addform { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.addform .ein { flex: 1 1 220px; }
+@media (max-width: 600px) {
+  .slot { grid-template-columns: 62px minmax(0, 1fr); }
+  .slot-time { font-size: 15px; }
+  .ccard { grid-template-columns: auto minmax(0, 1fr); }
+  .ccard .right { grid-column: 1 / -1; justify-content: flex-start; }
+  .menu { right: auto; left: 0; }
+}
 .dp { position: relative; display: inline-block; }
 .dp-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 16px; border: 2px solid var(--line); border-radius: 12px; background: var(--white); font-size: 17px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .dp-btn:hover, .dp-btn[aria-expanded="true"] { border-color: var(--blue); }
@@ -521,7 +576,8 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   async function loadDay() {
     try { adm.list = (await staff("agenda_dia", { p_fecha: adm.day })).citas; adm.loadErr = ""; }
     catch (e) { if (e.message !== "clave") adm.loadErr = "No se pudo cargar la agenda. Revise el internet."; }
-    if (view === "adm" && adm.unlocked && adm.tab === "agenda" && !adm.editTel && !document.activeElement?.matches?.("input")) renderAdmin();
+    const ocupado = adm.editTel || adm.editName || adm.addSlot || adm.menu || drag || dp.open || document.activeElement?.matches?.("input");
+    if (view === "adm" && adm.unlocked && adm.tab === "agenda" && !ocupado) renderAdmin();
   }
   async function loadPacientes() {
     try { adm.pacientes = (await staff("pacientes_lista")).pacientes; }
@@ -589,33 +645,75 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
         (sinTel ? '<span class="sub">' + sinTel + (sinTel === 1 ? ' paciente no tiene' : ' pacientes no tienen') + ' teléfono.</span>' : '') + '</div>';
     }
 
+    // Siempre se ven los 24 lugares del horario; las horas van en su propia columna
     const isToday = adm.day === today(), now = nowHHMM();
-    h += '<div class="list" aria-live="polite">';
-    if (!list.length) h += '<div class="empty">No hay citas este día. Use <b>Cargar citas</b> para agregarlas.</div>';
-    list.forEach((c, i) => {
-      const late = isToday && c.estado === "pendiente" && c.hora < now;
-      const next = list[i + 1];
-      const current = isToday && c.hora <= now && (!next || next.hora > now);
-      const tag = late ? '<span class="tag late">No confirmado · ya es su hora</span>'
-        : '<span class="tag ' + c.estado + '">' + LABEL[c.estado] + (c.avisoEn || c.aviso_en ? (c.estado !== "pendiente" ? " · " + clock(c.aviso_en) : "") : "") + '</span>';
-      const llego = c.estado === "llego"
-        ? '<button class="sbtn ghost" type="button" data-undo="' + c.id + '">Deshacer</button>'
-        : '<button class="sbtn fill" type="button" data-llego="' + c.id + '">Atendido</button>';
-      const tel = c.telefono
-        ? '<button class="telbtn" type="button" data-tel="' + c.id + '">' + ic("phone") + telShow(c.telefono) + '</button>' + (c.enviado_en ? ' <span class="sent">' + ic("check") + 'enviado</span>' : '')
-        : '<button class="telbtn add" type="button" data-tel="' + c.id + '">+ Agregar teléfono</button>';
-      const wa = c.telefono ? '<a class="sbtn wa" href="' + esc(waLink(c)) + '" target="_blank" rel="noopener" data-wa="' + c.id + '" aria-label="WhatsApp a ' + esc(c.nombre) + '">' + ic("chat") + '</a>' : '';
-      h += '<div class="row ' + c.estado + (current ? " now" : "") + '"><span class="hr">' + c.hora + '</span>' +
-        '<div style="min-width:0"><div class="name">' + esc(c.nombre) + numTag(c) + '</div><div class="meta">' + tel + '</div></div>' +
-        '<div class="right">' + tag + wa + llego + '</div></div>';
-      if (adm.editTel === c.id) {
-        h += '<form class="telform" id="f-tel"><label for="tel-in">Teléfono de ' + esc(c.nombre) + '</label>' +
-          '<div class="row-btns"><input class="ein" id="tel-in" type="tel" inputmode="tel" value="' + esc(telShow(c.telefono)) + '" placeholder="55 1234 5678">' +
-          '<button class="mbtn" type="submit">Guardar</button><button class="mbtn line" type="button" id="tel-cancel">Cancelar</button></div>' +
-          '<span class="sub">Se queda guardado para las próximas citas de este paciente.</span></form>';
-      }
+    const porHora = new Map(list.map(c => [c.hora, c]));
+    const horas = [...new Set(SLOTS.concat(list.map(c => c.hora)))].sort();
+    h += '<p class="help">Arrastre un nombre con <b>⠿</b> para cambiarlo de hora. Si la hora está ocupada, los dos se intercambian.</p>';
+    h += '<div class="board" aria-live="polite">';
+    horas.forEach((hr, i) => {
+      const c = porHora.get(hr), next = horas[i + 1];
+      const current = isToday && hr <= now && (!next || next > now);
+      h += '<div class="slot' + (current ? ' now' : '') + (SLOTS.includes(hr) ? '' : ' extra') + '" data-slot="' + hr + '">' +
+        '<div class="slot-time">' + hr + '</div><div class="slot-body">' + (c ? citaCard(c, isToday && c.estado === "pendiente" && c.hora < now) : libreHTML(hr)) + '</div></div>';
     });
     return h + '</div>';
+  }
+
+  function citaCard(c, late) {
+    const tag = late ? '<span class="tag late">No confirmado · ya es su hora</span>'
+      : '<span class="tag ' + c.estado + '">' + LABEL[c.estado] + (c.aviso_en && c.estado !== "pendiente" ? " · " + clock(c.aviso_en) : "") + '</span>';
+    const llego = c.estado === "llego"
+      ? '<button class="sbtn ghost" type="button" data-undo="' + c.id + '">Deshacer</button>'
+      : '<button class="sbtn att" type="button" data-llego="' + c.id + '">Atendido</button>';
+    const tel = c.telefono
+      ? '<button class="telbtn" type="button" data-tel="' + c.id + '">' + ic("phone") + telShow(c.telefono) + '</button>' + (c.enviado_en ? ' <span class="sent">' + ic("check") + 'enviado</span>' : '')
+      : '<button class="telbtn add" type="button" data-tel="' + c.id + '">+ Agregar teléfono</button>';
+    const wa = c.telefono ? '<a class="sbtn wa" href="' + esc(waLink(c)) + '" target="_blank" rel="noopener" data-wa="' + c.id + '" aria-label="WhatsApp a ' + esc(c.nombre) + '">' + ic("chat") + '</a>' : '';
+    let h = '<div class="ccard ' + c.estado + '" data-cid="' + c.id + '">' +
+      '<button class="grip" type="button" data-grip="' + c.id + '" aria-label="Arrastrar a ' + esc(c.nombre) + ' a otra hora">⠿</button>' +
+      '<div class="cmain"><div class="name">' + esc(c.nombre) + numTag(c) + '</div><div class="meta">' + tel + '</div></div>' +
+      '<div class="right">' + tag + wa + llego +
+      '<div class="menuwrap"><button class="dots" type="button" data-menu="' + c.id + '" aria-label="Más opciones" aria-expanded="' + (adm.menu === c.id) + '">⋮</button>' +
+      (adm.menu === c.id ? menuHTML(c) : '') + '</div></div></div>';
+    if (adm.editName === c.id) {
+      h += '<form class="telform" id="f-name"><label for="name-in">Nombre del paciente</label>' +
+        '<div class="row-btns"><input class="ein" id="name-in" value="' + esc(c.nombre) + '" autocapitalize="words" style="max-width:360px;font-family:var(--font)">' +
+        '<button class="mbtn" type="submit">Guardar</button><button class="mbtn line" type="button" id="name-cancel">Cancelar</button></div>' +
+        '<span class="sub">Se cambia también en Pacientes.</span></form>';
+    }
+    if (adm.editTel === c.id) {
+      h += '<form class="telform" id="f-tel"><label for="tel-in">Teléfono de ' + esc(c.nombre) + '</label>' +
+        '<div class="row-btns"><input class="ein" id="tel-in" type="tel" inputmode="tel" value="' + esc(telShow(c.telefono)) + '" placeholder="55 1234 5678">' +
+        '<button class="mbtn" type="submit">Guardar</button><button class="mbtn line" type="button" id="tel-cancel">Cancelar</button></div>' +
+        '<span class="sub">Se queda guardado para las próximas citas de este paciente.</span></form>';
+    }
+    return h;
+  }
+
+  function menuHTML(c) {
+    if (adm.confirmQuitar === c.id) {
+      return '<div class="menu" role="menu"><p class="menu-q">¿Quitar a ' + esc(c.nombre) + ' de esta hora?</p>' +
+        '<button type="button" class="menu-i danger" data-act="quitar-si" data-id="' + c.id + '">Sí, quitar de la agenda</button>' +
+        '<button type="button" class="menu-i" data-act="cerrar">No, dejarlo</button></div>';
+    }
+    const est = [["camino", "Confirmado"], ["pendiente", "No confirmado"], ["no_va", "Cancelado"], ["llego", "Atendido"]]
+      .filter(([k]) => k !== c.estado)
+      .map(([k, l]) => '<button type="button" class="menu-i" role="menuitem" data-act="estado" data-est="' + k + '" data-id="' + c.id + '"><span class="dot ' + k + '"></span>Marcar como ' + l.toLowerCase() + '</button>').join("");
+    return '<div class="menu" role="menu">' +
+      '<button type="button" class="menu-i" role="menuitem" data-act="nombre" data-id="' + c.id + '">Editar nombre</button>' +
+      '<button type="button" class="menu-i" role="menuitem" data-act="tel" data-id="' + c.id + '">' + (c.telefono ? 'Cambiar teléfono' : 'Agregar teléfono') + '</button>' +
+      '<div class="menu-sep"></div>' + est + '<div class="menu-sep"></div>' +
+      '<button type="button" class="menu-i danger" role="menuitem" data-act="quitar" data-id="' + c.id + '">Quitar de la agenda</button></div>';
+  }
+
+  function libreHTML(hr) {
+    if (adm.addSlot === hr) {
+      return '<form class="addform" id="f-add"><input class="ein" id="add-in" placeholder="Nombre del paciente" autocapitalize="words" list="pac-names">' +
+        '<datalist id="pac-names">' + (adm.pacientes || []).map(p => '<option value="' + esc(p.nombre) + '">').join("") + '</datalist>' +
+        '<button class="mbtn" type="submit">Agregar</button><button class="mbtn line" type="button" id="add-cancel">Cancelar</button></form>';
+    }
+    return '<div class="libre"><span>Libre</span><button class="addslot" type="button" data-add="' + hr + '">+ Agregar paciente</button></div>';
   }
 
   // ---------- Cargar citas (foto o texto) ----------
@@ -858,7 +956,59 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     }));
     pop.querySelectorAll("[data-dpday]").forEach(b => b.addEventListener("click", () => elegirFecha(dp.open, b.dataset.dpday)));
   }
-  document.addEventListener("click", () => { if (dp.open) { dp.open = null; renderAdmin(); } });
+  document.addEventListener("click", () => {
+    if (dp.open || adm.menu) { dp.open = null; adm.menu = null; adm.confirmQuitar = null; renderAdmin(); }
+  });
+
+  // ---------- Arrastrar nombres entre horas (mouse y dedo) ----------
+  let drag = null;
+  function wireDrag() {
+    app.querySelectorAll("[data-grip]").forEach(g => {
+      g.addEventListener("pointerdown", e => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        const card = g.closest(".ccard"), r = card.getBoundingClientRect();
+        drag = { id: g.dataset.grip, card, dy: e.clientY - r.top, x: r.left, w: r.width, started: false, y0: e.clientY, over: null };
+        g.setPointerCapture(e.pointerId);
+      });
+      g.addEventListener("pointermove", e => {
+        if (!drag) return;
+        if (!drag.started) {
+          if (Math.abs(e.clientY - drag.y0) < 5) return;
+          drag.started = true;
+          drag.ghost = drag.card.cloneNode(true);
+          drag.ghost.classList.add("ghost");
+          drag.ghost.style.width = drag.w + "px"; drag.ghost.style.left = drag.x + "px";
+          document.body.appendChild(drag.ghost);
+          drag.card.classList.add("dragging");
+        }
+        drag.ghost.style.top = (e.clientY - drag.dy) + "px";
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const slot = el && el.closest(".slot");
+        if (drag.over && drag.over !== slot) drag.over.classList.remove("over");
+        if (slot) slot.classList.add("over");
+        drag.over = slot;
+        if (e.clientY < 70) window.scrollBy(0, -14); else if (e.clientY > innerHeight - 70) window.scrollBy(0, 14);
+      });
+      const fin = async () => {
+        if (!drag) return;
+        const d = drag; drag = null;
+        if (!d.started) return;
+        d.ghost.remove(); d.card.classList.remove("dragging");
+        if (d.over) d.over.classList.remove("over");
+        const c = adm.list.find(x => x.id === d.id), dest = d.over && d.over.dataset.slot;
+        if (!c || !dest || dest === c.hora) return;
+        const otro = adm.list.find(x => x.hora === dest);
+        if (otro) otro.hora = c.hora;          // se ve el cambio de inmediato
+        c.hora = dest;
+        renderAdmin();
+        try { await staff("mover_cita", { p_id: c.id, p_hora: dest }); } catch (e) {}
+        loadDay();
+      };
+      g.addEventListener("pointerup", fin);
+      g.addEventListener("pointercancel", fin);
+    });
+  }
   document.addEventListener("keydown", e => { if (e.key === "Escape" && dp.open) { dp.open = null; renderAdmin(); } });
 
   function qrHTML() {
@@ -905,6 +1055,56 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     app.querySelectorAll("[data-undo]").forEach(b => b.addEventListener("click", async () => { busy(); try { await staff("marcar_cita", { p_id: b.dataset.undo, p_estado: "pendiente" }); } catch (e) {} loadDay(); }));
     app.querySelectorAll("[data-tel]").forEach(b => b.addEventListener("click", () => { adm.editTel = b.dataset.tel; renderAdmin(); const t = $("tel-in"); if (t) t.focus(); }));
     on("tel-cancel", () => { adm.editTel = null; renderAdmin(); });
+
+    // agenda: menú de tres puntos, agregar en lugar libre, editar nombre, arrastrar
+    wireDrag();
+    app.querySelectorAll("[data-menu]").forEach(b => b.addEventListener("click", e => {
+      e.stopPropagation(); adm.confirmQuitar = null;
+      adm.menu = adm.menu === b.dataset.menu ? null : b.dataset.menu; renderAdmin();
+    }));
+    app.querySelectorAll(".menu").forEach(m => m.addEventListener("click", e => e.stopPropagation()));
+    app.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", async () => {
+      const act = b.dataset.act, id = b.dataset.id;
+      if (act === "cerrar") { adm.menu = null; adm.confirmQuitar = null; return renderAdmin(); }
+      if (act === "quitar") { adm.confirmQuitar = id; return renderAdmin(); }
+      adm.menu = null; adm.confirmQuitar = null;
+      if (act === "nombre") { adm.editName = id; adm.editTel = null; renderAdmin(); const n = $("name-in"); if (n) { n.focus(); n.select(); } return; }
+      if (act === "tel") { adm.editTel = id; adm.editName = null; renderAdmin(); const t = $("tel-in"); if (t) t.focus(); return; }
+      busy();
+      try {
+        if (act === "estado") await staff("marcar_cita", { p_id: id, p_estado: b.dataset.est });
+        if (act === "quitar-si") await staff("borrar_cita", { p_id: id });
+      } catch (e) {}
+      loadDay();
+    }));
+    app.querySelectorAll("[data-add]").forEach(b => b.addEventListener("click", () => {
+      adm.addSlot = b.dataset.add; adm.msg = ""; renderAdmin(); const a = $("add-in"); if (a) a.focus();
+      if (!adm.pacientes) loadPacientes();
+    }));
+    on("add-cancel", () => { adm.addSlot = null; renderAdmin(); });
+    const fa = $("f-add");
+    if (fa) fa.addEventListener("submit", async e => {
+      e.preventDefault();
+      const nombre = titleCase($("add-in").value.trim().replace(/\s+/g, " "));
+      if (nombre.length < 2) return;
+      busy();
+      try {
+        const r = await staff("agregar_cita", { p_fecha: adm.day, p_hora: adm.addSlot, p_nombre: nombre });
+        adm.flash = r.error ? "" : (nombre + " quedó a las " + adm.addSlot + "." + (r.nuevo ? " Se agregó a Pacientes." : ""));
+        adm.loadErr = r.error || "";
+      } catch (x) {}
+      adm.addSlot = null; adm.pacientes = null; loadDay();
+    });
+    on("name-cancel", () => { adm.editName = null; renderAdmin(); });
+    const fn = $("f-name");
+    if (fn) fn.addEventListener("submit", async e => {
+      e.preventDefault();
+      const c = adm.list.find(x => x.id === adm.editName), nombre = titleCase($("name-in").value.trim().replace(/\s+/g, " "));
+      if (!c || nombre.length < 2) return;
+      busy();
+      try { await staff("paciente_guardar", { p_id: c.paciente_id, p_nombre: nombre, p_telefono: c.telefono || "", p_cita: c.id }); } catch (x) {}
+      adm.editName = null; adm.pacientes = null; loadDay();
+    });
     const ft = $("f-tel");
     if (ft) ft.addEventListener("submit", async e => {
       e.preventDefault();
