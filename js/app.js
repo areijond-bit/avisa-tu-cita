@@ -124,7 +124,7 @@
         h += '</div></section>';
         if (c.estado !== "llego") {
           h += '<div class="actions">';
-          if (c.estado !== "camino") h += '<button class="btn-xl btn-blue" type="button" data-camino="' + esc(c.id) + '">' + ic("go") + 'Confirmar mi cita</button>';
+          if (c.estado !== "camino") h += '<button class="btn-xl btn-blue" type="button" data-camino="' + esc(c.id) + '">' + ic("check") + 'Confirmar mi cita</button>';
           if (c.estado !== "no_va") h += '<button class="btn-xl btn-orange-line" type="button" data-nova="' + esc(c.id) + '">' + ic("x") + 'Cancelar mi cita</button>';
           h += '</div>';
         }
