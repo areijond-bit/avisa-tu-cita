@@ -139,7 +139,7 @@
       const camino = sel.estado === "camino";
       h += '<div class="done"><div class="ok ' + (camino ? "blue" : "orange") + '">' + ic("check") + '</div>' +
         '<h1>' + (camino ? 'Su cita está confirmada' : 'Su cita está cancelada') + '</h1>' +
-        '<p>' + (camino ? "Le esperamos el " + longDay(sel.fecha).toLowerCase() + " a las " + ampm(sel.hora) + "." : "Gracias por avisar al doctor.") + '</p></div>' +
+        '<p>' + (camino ? "Le esperamos el " + longDay(sel.fecha).toLowerCase() + " a las " + ampm(sel.hora) : "Gracias por avisar al doctor.") + '</p></div>' +
         '<button class="btn-xl btn-plain" type="button" id="restart">Terminar</button>';
     }
     app.innerHTML = h + '</main>';
