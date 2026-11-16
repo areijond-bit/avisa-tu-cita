@@ -9,200 +9,207 @@
 <title>Avisa tu Cita</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&family=Atkinson+Hyperlegible+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700;800&family=Atkinson+Hyperlegible+Mono:wght@500;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-/* Layout: una sola columna angosta para el paciente (pocas opciones, botones enormes); el panel del consultorio usa una lista por hora. */
+/* Layout: encabezado blanco con línea azul; una columna angosta para el paciente con una sola acción por pantalla; el consultorio ve una lista por hora. Siempre fondo blanco. */
 :root {
-  --bg: #FFFFFF;
-  --surface: #F3F7FD;
-  --fg: #0E1E3A;
-  --muted: #4A5872;
-  --line: #D2DCEC;
-  --accent: #1A56C4;
-  --accent-ink: #FFFFFF;
-  --go: #1A56C4;
-  --go-soft: #E3ECFB;
-  --stop: #C2560A;
-  --stop-soft: #FDEEE2;
-  --warn: #B3261E;
-  --warn-soft: #FBE7E5;
-  --idle-soft: #ECEFF4;
-  --arrived: #2B7A4B;
-  --arrived-soft: #E3F3E9;
+  --white: #FFFFFF;
+  --ink: #0F1B2D;
+  --muted: #4E5D75;
+  --line: #DDE4EE;
+  --soft: #F5F8FC;
+  --blue: #1450A3;
+  --blue-hover: #0F428A;
+  --blue-tint: #EAF1FB;
+  --orange: #E2650F;
+  --orange-ink: #B24F0B;
+  --orange-tint: #FFF1E6;
+  --error: #B42318;
   --font: "Atkinson Hyperlegible Next", "Segoe UI", system-ui, sans-serif;
   --mono: "Atkinson Hyperlegible Mono", ui-monospace, Consolas, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0B1426; --surface: #13203A; --fg: #EEF3FC; --muted: #A6B4CE; --line: #2A3A5A;
-    --accent: #6FA0FF; --accent-ink: #081733;
-    --go: #6FA0FF; --go-soft: #1A2D55; --stop: #FF9F57; --stop-soft: #3D2410;
-    --warn: #FF8A80; --warn-soft: #3F1D1A; --idle-soft: #1C2A45;
-    --arrived: #6FD49A; --arrived-soft: #15382A;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0B1426; --surface: #13203A; --fg: #EEF3FC; --muted: #A6B4CE; --line: #2A3A5A;
-  --accent: #6FA0FF; --accent-ink: #081733;
-  --go: #6FA0FF; --go-soft: #1A2D55; --stop: #FF9F57; --stop-soft: #3D2410;
-  --warn: #FF8A80; --warn-soft: #3F1D1A; --idle-soft: #1C2A45;
-  --arrived: #6FD49A; --arrived-soft: #15382A;
-  color-scheme: dark;
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
-body {
-  background: var(--bg); color: var(--fg); font-family: var(--font);
-  font-size: 18px; line-height: 1.5;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 12px 40px;
-}
-button, input, textarea, select { font: inherit; color: inherit; }
+html { background: var(--white); }
+body { background: var(--white); color: var(--ink); font-family: var(--font); font-size: 20px; line-height: 1.5; }
+button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.2; }
+:focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; }
+svg.i { width: 1em; height: 1em; flex: none; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 
-.demo-bar {
-  display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between;
-  max-width: 960px; margin: 0 auto 16px; font-size: 14px; color: var(--muted);
+.wrap { width: 100%; max-width: 560px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+.wrap.wide { max-width: 1000px; }
+
+/* encabezado */
+.top { border-bottom: 4px solid var(--blue); background: var(--white); }
+.top .wrap { display: flex; align-items: center; gap: 14px; padding-block: 16px; }
+.mark { width: 48px; height: 48px; border-radius: 12px; background: var(--blue); display: grid; place-items: center; flex: none; }
+.mark svg { width: 26px; height: 26px; }
+.top .id { display: flex; flex-direction: column; min-width: 0; }
+.top .doc { font-size: 22px; font-weight: 800; line-height: 1.2; }
+.top .place { font-size: 16px; color: var(--muted); }
+.top .right { margin-left: auto; }
+
+main.wrap { padding-block: 28px 24px; display: flex; flex-direction: column; gap: 24px; }
+
+/* botones grandes */
+.btn-xl {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  width: 100%; min-height: 80px; padding: 16px 24px; border-radius: 16px;
+  font-size: 26px; font-weight: 800; letter-spacing: 0.005em; border: 3px solid transparent;
+  transition: background-color .15s, transform .05s;
 }
-.switch { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
-.switch button { border: 0; background: none; padding: 6px 14px; font-size: 14px; font-weight: 600; }
-.switch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.btn-xl svg.i { width: 32px; height: 32px; stroke-width: 2.6; }
+.btn-xl:active { transform: translateY(1px); }
+.btn-blue { background: var(--blue); color: var(--white); }
+.btn-blue:hover { background: var(--blue-hover); }
+.btn-orange { background: var(--orange); color: var(--white); }
+.btn-orange:hover { background: var(--orange-ink); }
+.btn-orange-line { background: var(--white); color: var(--orange-ink); border-color: var(--orange); }
+.btn-orange-line:hover { background: var(--orange-tint); }
+.btn-plain { background: var(--white); color: var(--blue); border-color: var(--line); font-size: 22px; min-height: 64px; }
+.btn-plain:hover { border-color: var(--blue); }
 
-/* ---------- Paciente ---------- */
-.patient { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-.clinic { display: flex; flex-direction: column; gap: 4px; }
-.clinic h1 { font-size: 28px; font-weight: 800; }
-.clinic p { margin: 0; color: var(--muted); font-size: 18px; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
-.big {
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  width: 100%; min-height: 76px; padding: 14px 20px; border-radius: 14px;
-  font-size: 24px; font-weight: 800; border: 3px solid transparent; text-align: center;
+.lead { display: flex; flex-direction: column; gap: 10px; }
+.lead h1 { font-size: 34px; font-weight: 800; }
+.lead p { font-size: 21px; color: var(--muted); max-width: 32ch; }
+.step { font-size: 16px; font-weight: 700; color: var(--orange-ink); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* teléfono */
+.phone { display: flex; align-items: center; gap: 16px; padding: 18px 20px; border: 2px solid var(--line); border-radius: 16px; }
+.phone .ic { width: 52px; height: 52px; border-radius: 50%; background: var(--blue-tint); color: var(--blue); display: grid; place-items: center; flex: none; }
+.phone .ic svg.i { width: 26px; height: 26px; }
+.phone .txt { display: flex; flex-direction: column; min-width: 0; }
+.phone .txt span { font-size: 17px; color: var(--muted); }
+.phone a { font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--blue); text-decoration: none; user-select: all; }
+
+/* formulario */
+form.stack, .stack { display: flex; flex-direction: column; gap: 22px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field label { font-size: 22px; font-weight: 700; }
+.field .help { font-size: 17px; color: var(--muted); margin-top: -4px; }
+.input { width: 100%; min-height: 66px; padding: 12px 18px; font-size: 26px; border: 2px solid #B9C5D6; border-radius: 14px; background: var(--white); }
+.input:focus { border-color: var(--blue); outline: 3px solid var(--blue-tint); outline-offset: 0; }
+.input.digits { font-family: var(--mono); letter-spacing: 0.35em; max-width: 240px; }
+.err { display: flex; gap: 10px; align-items: flex-start; color: var(--error); font-weight: 700; font-size: 19px; background: #FDECEA; border-radius: 12px; padding: 14px 16px; }
+.tip { font-size: 16px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+
+/* cita */
+.appt { border: 2px solid var(--blue); border-radius: 18px; overflow: hidden; }
+.appt .who { background: var(--blue); color: var(--white); padding: 14px 20px; font-size: 20px; font-weight: 700; }
+.appt .body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.appt .line { display: flex; align-items: center; gap: 14px; }
+.appt .line svg.i { width: 30px; height: 30px; color: var(--blue); }
+.appt .date { font-size: 24px; font-weight: 700; }
+.appt .time { font-family: var(--mono); font-size: 40px; font-weight: 700; color: var(--blue); line-height: 1.1; }
+.state { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 700; padding: 12px 16px; border-radius: 12px; }
+.state svg.i { width: 24px; height: 24px; }
+.state.camino { background: var(--blue-tint); color: var(--blue); }
+.state.no_va { background: var(--orange-tint); color: var(--orange-ink); }
+.state.llego { background: var(--soft); color: var(--ink); }
+.actions { display: flex; flex-direction: column; gap: 14px; }
+.note { font-size: 18px; color: var(--muted); }
+
+/* confirmación */
+.done { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; padding-block: 12px; }
+.done .ok { width: 104px; height: 104px; border-radius: 50%; display: grid; place-items: center; }
+.done .ok svg.i { width: 56px; height: 56px; stroke-width: 3; }
+.done .ok.blue { background: var(--blue); color: var(--white); }
+.done .ok.orange { background: var(--orange); color: var(--white); }
+.done h1 { font-size: 34px; font-weight: 800; }
+.done p { font-size: 22px; color: var(--muted); max-width: 26ch; }
+
+.foot { border-top: 1px solid var(--line); margin-top: 8px; }
+.foot .wrap { padding-block: 18px 28px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; justify-content: space-between; font-size: 15px; color: var(--muted); }
+.link { background: none; border: 0; padding: 4px 0; color: var(--blue); font-weight: 700; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- consultorio ---------- */
+.nav { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.nav button { background: none; border: 0; border-bottom: 3px solid transparent; margin-bottom: -1px; padding: 12px 16px; font-size: 17px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.nav button[aria-selected="true"] { color: var(--blue); border-bottom-color: var(--orange); }
+.admin { display: flex; flex-direction: column; gap: 22px; }
+.bar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+.bar h2 { font-size: 26px; font-weight: 800; }
+.bar .sub { font-size: 16px; color: var(--muted); }
+.date-in { padding: 10px 12px; border: 2px solid var(--line); border-radius: 10px; font-size: 16px; background: var(--white); }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 14px; }
+.stat { padding: 14px 18px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--line); }
+.stat:first-child { border-left: 0; }
+.stat b { font-family: var(--mono); font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 15px; font-weight: 700; color: var(--muted); }
+.stat.camino b { color: var(--blue); }
+.stat.no_va b { color: var(--orange-ink); }
+.stat.pendiente b { color: var(--muted); }
+.stat.llego b { color: var(--ink); }
+@media (max-width: 600px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat:nth-child(3) { border-left: 0; }
+  .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
 }
-.big .ico { font-size: 30px; line-height: 1; }
-.big.primary { background: var(--accent); color: var(--accent-ink); }
-.big.go { background: var(--go); color: #fff; }
-.big.stop { background: var(--surface); color: var(--stop); border-color: var(--stop); }
-.big.stop-solid { background: var(--stop); color: #fff; }
-.big.plain { background: var(--surface); color: var(--fg); border-color: var(--line); font-size: 20px; min-height: 60px; }
-:root[data-theme="dark"] .big.go, :root[data-theme="dark"] .big.stop-solid { color: #0F1714; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .big.go, :root:not([data-theme="light"]) .big.stop-solid { color: #0F1714; } }
 
-label.field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 20px; }
-label.field small { font-weight: 400; color: var(--muted); font-size: 16px; }
-input.txt {
-  width: 100%; min-height: 60px; padding: 10px 14px; font-size: 24px;
-  border: 2px solid var(--line); border-radius: 12px; background: var(--bg);
-}
-input.txt:focus { border-color: var(--accent); outline: none; }
-input.digits { font-family: var(--mono); letter-spacing: 0.3em; max-width: 220px; }
-.hint { font-size: 15px; color: var(--muted); background: var(--idle-soft); border-radius: 10px; padding: 10px 12px; }
-.error { color: var(--stop); font-weight: 600; font-size: 19px; margin: 0; }
-
-.appt { display: flex; flex-direction: column; gap: 4px; }
-.appt .who { font-size: 20px; color: var(--muted); }
-.appt .day { font-size: 28px; font-weight: 800; }
-.appt .time { font-family: var(--mono); font-size: 40px; font-weight: 700; color: var(--accent); }
-.status-line { font-size: 19px; font-weight: 600; border-radius: 10px; padding: 10px 14px; }
-.status-line.camino { background: var(--go-soft); color: var(--go); }
-.status-line.no_va { background: var(--stop-soft); color: var(--stop); }
-.status-line.llego { background: var(--arrived-soft); color: var(--arrived); }
-
-.done { text-align: center; align-items: center; }
-.done .mark { font-size: 64px; line-height: 1; }
-.done h2 { font-size: 30px; }
-.done p { margin: 0; font-size: 20px; }
-
-.call { display: flex; flex-direction: column; gap: 4px; align-items: center; text-align: center; color: var(--muted); font-size: 16px; }
-.call a { font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--accent); text-decoration: none; user-select: all; }
-
-/* ---------- Consultorio ---------- */
-.admin { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-.admin-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between; }
-.admin-head h1 { font-size: 26px; font-weight: 800; }
-.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-.tabs button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 14px; font-size: 16px; font-weight: 600; }
-.tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.toolbar input[type="date"] { padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 16px; }
-.toolbar .daylabel { font-weight: 700; font-size: 18px; }
-
-.counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.count { border-radius: 12px; padding: 10px 14px; display: flex; flex-direction: column; }
-.count b { font-family: var(--mono); font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.count span { font-size: 14px; font-weight: 600; }
-.count.camino { background: var(--go-soft); color: var(--go); }
-.count.no_va { background: var(--stop-soft); color: var(--stop); }
-.count.pendiente { background: var(--idle-soft); color: var(--muted); }
-.count.llego { background: var(--arrived-soft); color: var(--arrived); }
-@media (max-width: 560px) { .counts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-
-.rows { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-.row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); border-left: 5px solid transparent; }
+.list { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.row { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); font-size: 18px; }
 .row:first-child { border-top: 0; }
-.row.camino { border-left-color: var(--go); }
-.row.no_va { border-left-color: var(--stop); }
-.row.no_va .name { text-decoration: line-through; color: var(--muted); }
-.row.llego { border-left-color: var(--arrived); }
-.row.late { border-left-color: var(--warn); }
-.row .hr { font-family: var(--mono); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
-.row .name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
-.row .meta { font-size: 14px; color: var(--muted); font-family: var(--mono); }
-.row .right { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: end; }
-.pill { font-size: 14px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-.pill.camino { background: var(--go-soft); color: var(--go); }
-.pill.no_va { background: var(--stop-soft); color: var(--stop); }
-.pill.pendiente { background: var(--idle-soft); color: var(--muted); }
-.pill.llego { background: var(--arrived-soft); color: var(--arrived); }
-.pill.late { background: var(--warn-soft); color: var(--warn); }
-.mini { border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 6px 10px; font-size: 14px; font-weight: 600; }
-.mini.solid { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-@media (max-width: 560px) {
-  .row { grid-template-columns: 64px minmax(0, 1fr); }
-  .row .right { grid-column: 1 / -1; justify-content: start; }
+.row.now { background: var(--soft); }
+.row .hr { font-family: var(--mono); font-weight: 700; font-size: 19px; font-variant-numeric: tabular-nums; color: var(--blue); }
+.row .name { font-weight: 700; overflow-wrap: anywhere; }
+.row .meta { font-size: 15px; color: var(--muted); font-family: var(--mono); }
+.row.no_va .name { text-decoration: line-through; text-decoration-color: var(--orange); color: var(--muted); }
+.row .right { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: flex-end; }
+.tag { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+.tag::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.tag.camino { background: var(--blue-tint); color: var(--blue); }
+.tag.no_va { background: var(--orange-tint); color: var(--orange-ink); }
+.tag.pendiente { background: var(--soft); color: var(--muted); }
+.tag.llego { background: var(--ink); color: var(--white); }
+.tag.late { background: var(--white); color: var(--orange-ink); box-shadow: inset 0 0 0 2px var(--orange); }
+.sbtn { border: 2px solid var(--blue); background: var(--white); color: var(--blue); border-radius: 10px; padding: 7px 14px; font-size: 15px; font-weight: 700; }
+.sbtn:hover { background: var(--blue-tint); }
+.sbtn.fill { background: var(--blue); color: var(--white); }
+.sbtn.fill:hover { background: var(--blue-hover); }
+.sbtn.ghost { border-color: var(--line); color: var(--muted); }
+@media (max-width: 600px) {
+  .row { grid-template-columns: 60px minmax(0, 1fr); }
+  .row .right { grid-column: 2; justify-content: flex-start; }
 }
-.empty { padding: 28px 16px; text-align: center; color: var(--muted); }
+.empty { padding: 32px 18px; text-align: center; color: var(--muted); font-size: 18px; }
 
-.paste { display: flex; flex-direction: column; gap: 14px; }
-.paste textarea { width: 100%; min-height: 200px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-family: var(--mono); font-size: 15px; }
-.paste .help { font-size: 15px; color: var(--muted); max-width: 65ch; }
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
-table { border-collapse: collapse; width: 100%; font-size: 15px; }
-th, td { padding: 8px 12px; text-align: left; border-top: 1px solid var(--line); white-space: nowrap; }
-th { border-top: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.paste textarea { width: 100%; min-height: 220px; padding: 14px; border: 2px solid var(--line); border-radius: 12px; font-family: var(--mono); font-size: 15px; line-height: 1.6; background: var(--white); }
+.paste textarea:focus { border-color: var(--blue); outline: none; }
+.paste .help { font-size: 17px; color: var(--muted); max-width: 70ch; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 16px; }
+th, td { padding: 10px 14px; text-align: left; border-top: 1px solid var(--line); white-space: nowrap; }
+th { border-top: 0; background: var(--soft); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 td.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-tr.bad td { background: var(--stop-soft); color: var(--stop); }
-.btnrow { display: flex; flex-wrap: wrap; gap: 10px; }
-.btn { border: 0; border-radius: 10px; padding: 10px 18px; font-weight: 700; font-size: 16px; background: var(--accent); color: var(--accent-ink); }
-.btn.ghost { background: var(--surface); color: var(--fg); border: 1px solid var(--line); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.toast { font-weight: 600; color: var(--go); }
+tr.bad td { color: var(--error); background: #FDECEA; }
+.row-btns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.mbtn { border: 0; border-radius: 12px; padding: 12px 22px; font-size: 17px; font-weight: 700; background: var(--blue); color: var(--white); }
+.mbtn:hover { background: var(--blue-hover); }
+.mbtn.orange { background: var(--orange); }
+.mbtn.orange:hover { background: var(--orange-ink); }
+.mbtn.line { background: var(--white); color: var(--blue); border: 2px solid var(--line); }
+.mbtn:disabled { opacity: .45; cursor: not-allowed; }
+.okmsg { color: var(--blue); font-weight: 700; }
 
-.poster { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
-.poster h2 { font-size: 30px; font-weight: 800; }
-.poster p { margin: 8px 0 0; font-size: 18px; max-width: 40ch; }
-.poster ol { margin: 12px 0 0; padding-left: 22px; font-size: 18px; }
-.qrbox { background: #fff; padding: 12px; border-radius: 10px; }
-.qrbox img, .qrbox canvas { display: block; width: 180px; height: 180px; }
-@media (max-width: 560px) { .poster { grid-template-columns: 1fr; justify-items: start; } }
+.poster { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: center; border: 2px solid var(--blue); border-radius: 18px; padding: 32px; }
+.poster .eyebrow { color: var(--orange-ink); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; font-size: 15px; }
+.poster h2 { font-size: 36px; font-weight: 800; color: var(--blue); margin-top: 6px; }
+.poster ol { margin: 18px 0 0; padding-left: 26px; font-size: 20px; display: flex; flex-direction: column; gap: 6px; }
+.poster .small { font-size: 15px; color: var(--muted); margin-top: 18px; }
+.qrbox { padding: 14px; border: 2px solid var(--line); border-radius: 14px; background: var(--white); }
+.qrbox img, .qrbox canvas { display: block; width: 200px; height: 200px; }
+@media (max-width: 600px) { .poster { grid-template-columns: 1fr; padding: 22px; } }
 
-.lock { max-width: 380px; margin: 40px auto; }
-@media (prefers-reduced-motion: no-preference) { .card, .rows { animation: in .18s ease-out; } @keyframes in { from { transform: translateY(4px); } to { transform: none; } } }
+.lock { max-width: 420px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
-<div class="demo-bar">
-  <span>Prototipo con citas de ejemplo. Los datos se guardan solo en este dispositivo.</span>
-  <div class="switch" role="group" aria-label="Cambiar vista">
-    <button type="button" id="v-pac" aria-pressed="true">Vista paciente</button>
-    <button type="button" id="v-adm" aria-pressed="false">Vista consultorio</button>
-  </div>
-</div>
-
-<main id="app"></main>
+<div id="app"></div>
 
 <script>
 (function () {
@@ -211,8 +218,23 @@ tr.bad td { background: var(--stop-soft); color: var(--stop); }
   const HORARIO = { inicio: 8 * 60, fin: 14 * 60, cada: 15 };
   const SLOTS = [];
   for (let m = HORARIO.inicio; m < HORARIO.fin; m += HORARIO.cada) SLOTS.push(String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"));
-  const CLINIC = { nombre: "Consultorio del Dr. Alejandro Alba", lugar: "Unidad de Medicina Familiar · Consultorio 8", tel: "55 1234 5678" };
+  const CLINIC = { doctor: "Dr. Alejandro Alba", lugar: "Medicina Familiar · Consultorio 8", tel: "55 1234 5678" };
   const PIN = "1234";
+
+  // ---------- íconos ----------
+  const ICON = {
+    search: '<circle cx="11" cy="11" r="7.5"/><line x1="21" y1="21" x2="16.4" y2="16.4"/>',
+    go: '<polygon points="3 11 21 3 13 21 11 13 3 11"/>',
+    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    back: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
+    cal: '<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    clock: '<circle cx="12" cy="12" r="9.5"/><polyline points="12 7 12 12 15.5 14"/>',
+    phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
+    alert: '<circle cx="12" cy="12" r="9.5"/><line x1="12" y1="7.5" x2="12" y2="12.5"/><line x1="12" y1="16.5" x2="12" y2="16.5"/>'
+  };
+  const ic = n => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + ICON[n] + '</svg>';
+  const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3h5v6.5H21v5h-6.5V21h-5v-6.5H3v-5h6.5z" fill="#fff"/></svg>';
 
   // ---------- fechas ----------
   const pad = n => String(n).padStart(2, "0");
@@ -226,14 +248,12 @@ tr.bad td { background: var(--stop-soft); color: var(--stop); }
   };
   const ampm = hhmm => {
     const [h, m] = hhmm.split(":").map(Number);
-    const suf = h < 12 ? "a. m." : "p. m.";
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return h12 + ":" + pad(m) + " " + suf;
+    return (h % 12 === 0 ? 12 : h % 12) + ":" + pad(m) + " " + (h < 12 ? "a. m." : "p. m.");
   };
   const clock = iso => { const d = new Date(iso); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
   const nowHHMM = () => { const d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
 
-  // ---------- datos ----------
+  // ---------- datos de ejemplo ----------
   function sample() {
     const t = today(), m = addDays(t, 1);
     const ago = min => new Date(Date.now() - min * 60000).toISOString();
@@ -283,163 +303,164 @@ tr.bad td { background: var(--stop-soft); color: var(--stop); }
   const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
   const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
   const app = document.getElementById("app");
+  const $ = id => document.getElementById(id);
+  const on = (id, fn) => { const el = $(id); if (el) el.addEventListener("click", fn); };
 
-  // ---------- vista paciente ----------
-  let pac = { step: "inicio", q: "", d4: "", found: [], sel: null, err: "" };
+  function topBar(right) {
+    return '<header class="top"><div class="wrap' + (view === "adm" ? " wide" : "") + '"><div class="mark">' + CROSS + '</div>' +
+      '<div class="id"><span class="doc">' + CLINIC.doctor + '</span><span class="place">' + CLINIC.lugar + '</span></div>' +
+      (right ? '<div class="right">' + right + '</div>' : '') + '</div></header>';
+  }
+  function phoneBlock() {
+    return '<div class="phone"><div class="ic">' + ic("phone") + '</div><div class="txt"><span>¿Tiene dudas? Llame al consultorio</span>' +
+      '<a href="tel:+52' + CLINIC.tel.replace(/\s/g, "") + '">' + CLINIC.tel + '</a></div></div>';
+  }
 
-  function callBlock() {
-    return '<div class="call">¿Dudas? Llame al consultorio<a href="tel:' + CLINIC.tel.replace(/\s/g, "") + '">' + CLINIC.tel + '</a></div>';
-  }
-  function header() {
-    return '<header class="clinic"><h1>' + CLINIC.nombre + '</h1><p>' + CLINIC.lugar + '</p></header>';
-  }
-  const statusText = {
-    camino: "Ya avisó que viene en camino.",
-    no_va: "Ya avisó que no va a venir.",
-    llego: "Ya registraron su llegada. ¡Gracias!"
-  };
+  // ---------- paciente ----------
+  const fresh = () => ({ step: "inicio", q: "", d4: "", found: [], sel: null, err: "" });
+  let pac = fresh();
 
   function renderPatient() {
-    let h = '<div class="patient">' + header();
+    let h = topBar("") + '<main class="wrap">';
     if (pac.step === "inicio") {
-      h += '<section class="card"><h2 style="font-size:24px">Avise si va a llegar a su cita</h2>' +
-        '<p style="margin:0;font-size:19px">Así el doctor sabe si debe esperarle.</p>' +
-        '<button class="big primary" id="go-search" type="button"><span class="ico" aria-hidden="true">🔍</span>Buscar mi cita</button></section>';
+      h += '<div class="lead"><h1>¿Va a venir a su cita?</h1><p>Avísele al doctor si ya va en camino o si ya no puede venir.</p></div>' +
+        '<button class="btn-xl btn-blue" id="go-search" type="button">' + ic("search") + 'Buscar mi cita</button>' + phoneBlock();
     } else if (pac.step === "buscar") {
-      h += '<form class="card" id="f-search" novalidate>' +
-        '<label class="field">Su nombre<small>Por ejemplo: María López</small>' +
-        '<input class="txt" id="q" autocomplete="name" value="' + esc(pac.q) + '"></label>' +
-        '<label class="field">Últimos 4 números de su seguro social<small>Vienen en su carnet del IMSS</small>' +
-        '<input class="txt digits" id="d4" inputmode="numeric" maxlength="4" pattern="[0-9]*" value="' + esc(pac.d4) + '"></label>' +
-        (pac.err ? '<p class="error" role="alert">' + pac.err + '</p>' : '') +
-        '<button class="big primary" type="submit"><span class="ico" aria-hidden="true">🔍</span>Buscar</button>' +
-        '<button class="big plain" type="button" id="back">Regresar</button>' +
-        '<p class="hint">Para probar: <b>María López</b> con <b>4821</b>, o <b>José Martínez</b> con <b>3347</b>.</p>' +
-        '</form>';
+      h += '<div class="lead"><span class="step">Paso 1 de 2</span><h1>Buscar mi cita</h1></div>' +
+        '<form class="stack" id="f-search" novalidate>' +
+        '<div class="field"><label for="q">Su nombre</label><span class="help">Nombre y apellido, como en su carnet</span>' +
+        '<input class="input" id="q" autocomplete="name" autocapitalize="words" value="' + esc(pac.q) + '"></div>' +
+        '<div class="field"><label for="d4">Últimos 4 números de su seguro social</label><span class="help">Los encuentra en su carnet del IMSS</span>' +
+        '<input class="input digits" id="d4" inputmode="numeric" maxlength="4" autocomplete="off" value="' + esc(pac.d4) + '"></div>' +
+        (pac.err ? '<div class="err" role="alert">' + ic("alert") + '<span>' + pac.err + '</span></div>' : '') +
+        '<button class="btn-xl btn-blue" type="submit">' + ic("search") + 'Buscar</button>' +
+        '<button class="btn-xl btn-plain" type="button" id="back">' + ic("back") + 'Regresar</button>' +
+        '<p class="tip">Prueba: escriba <b>María López</b> y <b>4821</b>.</p></form>';
     } else if (pac.step === "cita") {
       const db = load();
       const list = pac.found.map(id => db.citas.find(c => c.id === id)).filter(Boolean);
+      h += '<div class="lead"><span class="step">Paso 2 de 2</span><h1>' + (list.length > 1 ? "Sus citas" : "Su cita") + '</h1></div>';
       list.forEach(c => {
-        h += '<section class="card"><div class="appt"><span class="who">' + esc(c.nombre) + '</span>' +
-          '<span class="day">' + longDay(c.fecha) + '</span><span class="time">' + ampm(c.hora) + '</span></div>';
-        if (c.estado !== "pendiente") h += '<div class="status-line ' + c.estado + '">' + statusText[c.estado] + '</div>';
+        h += '<section class="appt"><div class="who">' + esc(c.nombre) + '</div><div class="body">' +
+          '<div class="line">' + ic("cal") + '<span class="date">' + longDay(c.fecha) + '</span></div>' +
+          '<div class="line">' + ic("clock") + '<span class="time">' + ampm(c.hora) + '</span></div>';
+        if (c.estado === "camino") h += '<div class="state camino">' + ic("check") + 'Ya avisó que va en camino</div>';
+        if (c.estado === "no_va") h += '<div class="state no_va">' + ic("x") + 'Ya avisó que no va a venir</div>';
+        if (c.estado === "llego") h += '<div class="state llego">' + ic("check") + 'Ya está registrada su llegada</div>';
+        h += '</div></section>';
         if (c.estado !== "llego") {
-          if (c.estado !== "camino") h += '<button class="big go" type="button" data-camino="' + esc(c.id) + '"><span class="ico" aria-hidden="true">🚗</span>Estoy en camino</button>';
-          if (c.estado !== "no_va") h += '<button class="big stop" type="button" data-nova="' + esc(c.id) + '"><span class="ico" aria-hidden="true">✖</span>Ya no voy</button>';
-          if (c.estado === "no_va") h += '<p style="margin:0;font-size:17px;color:var(--muted)">¿Se equivocó? Toque <b>Estoy en camino</b>.</p>';
+          h += '<div class="actions">';
+          if (c.estado !== "camino") h += '<button class="btn-xl btn-blue" type="button" data-camino="' + esc(c.id) + '">' + ic("go") + 'Voy en camino</button>';
+          if (c.estado !== "no_va") h += '<button class="btn-xl btn-orange-line" type="button" data-nova="' + esc(c.id) + '">' + ic("x") + 'Ya no voy a ir</button>';
+          h += '</div>';
         }
-        h += '</section>';
       });
-      h += '<button class="big plain" type="button" id="restart">Salir</button>';
+      h += '<button class="btn-xl btn-plain" type="button" id="restart">' + ic("back") + 'Salir</button>';
     } else if (pac.step === "confirmar_no") {
       const c = load().citas.find(x => x.id === pac.sel);
-      h += '<section class="card"><h2 style="font-size:26px">¿Seguro que ya no va a venir?</h2>' +
-        '<p style="margin:0;font-size:20px">Su cita del ' + longDay(c.fecha).toLowerCase() + ' a las ' + ampm(c.hora) + ' quedará libre para otro paciente.</p>' +
-        '<button class="big stop-solid" type="button" id="yes-no">Sí, ya no voy</button>' +
-        '<button class="big plain" type="button" id="cancel-no">No, regresar</button></section>';
+      h += '<div class="lead"><h1>¿Seguro que ya no va a venir?</h1><p>Su cita del ' + longDay(c.fecha).toLowerCase() + ' a las ' + ampm(c.hora) + ' se le dará a otro paciente.</p></div>' +
+        '<div class="actions"><button class="btn-xl btn-orange" type="button" id="yes-no">' + ic("check") + 'Sí, ya no voy</button>' +
+        '<button class="btn-xl btn-plain" type="button" id="cancel-no">' + ic("back") + 'No, regresar</button></div>';
     } else if (pac.step === "listo") {
       const c = load().citas.find(x => x.id === pac.sel);
       const camino = c.estado === "camino";
-      h += '<section class="card done"><span class="mark" aria-hidden="true">' + (camino ? "✅" : "👋") + '</span>' +
-        '<h2>Listo, el consultorio ya sabe</h2>' +
-        '<p>' + (camino ? "Avisamos que viene en camino a su cita de las " + ampm(c.hora) + "." : "Avisamos que no va a venir. Gracias por avisar.") + '</p>' +
-        '<button class="big plain" type="button" id="restart">Terminar</button></section>';
+      h += '<div class="done"><div class="ok ' + (camino ? "blue" : "orange") + '">' + ic("check") + '</div>' +
+        '<h1>Listo, ya le avisamos al doctor</h1>' +
+        '<p>' + (camino ? "Le esperan a las " + ampm(c.hora) + ". Que tenga buen viaje." : "Gracias por avisar. Si necesita otra cita, llame al consultorio.") + '</p></div>' +
+        '<button class="btn-xl btn-plain" type="button" id="restart">Terminar</button>' + phoneBlock();
     }
-    h += callBlock() + '</div>';
+    h += '</main><footer class="foot"><div class="wrap"><span>Versión de prueba con citas de ejemplo.</span><button class="link" type="button" id="to-adm">Entrar como consultorio</button></div></footer>';
     app.innerHTML = h;
+    window.scrollTo(0, 0);
     wirePatient();
   }
 
   function wirePatient() {
-    const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener("click", fn); };
-    on("go-search", () => { pac.step = "buscar"; renderPatient(); focusFirst(); });
-    on("back", () => { pac = { step: "inicio", q: "", d4: "", found: [], sel: null, err: "" }; renderPatient(); });
-    on("restart", () => { pac = { step: "inicio", q: "", d4: "", found: [], sel: null, err: "" }; renderPatient(); });
+    on("to-adm", () => go("adm"));
+    on("go-search", () => { pac.step = "buscar"; renderPatient(); $("q").focus(); });
+    on("back", () => { pac = fresh(); renderPatient(); });
+    on("restart", () => { pac = fresh(); renderPatient(); });
     on("cancel-no", () => { pac.step = "cita"; renderPatient(); });
     on("yes-no", () => { setEstado(pac.sel, "no_va"); pac.step = "listo"; renderPatient(); });
     app.querySelectorAll("[data-camino]").forEach(b => b.addEventListener("click", () => { pac.sel = b.dataset.camino; setEstado(pac.sel, "camino"); pac.step = "listo"; renderPatient(); }));
     app.querySelectorAll("[data-nova]").forEach(b => b.addEventListener("click", () => { pac.sel = b.dataset.nova; pac.step = "confirmar_no"; renderPatient(); }));
-    const f = document.getElementById("f-search");
-    if (f) {
-      document.getElementById("d4").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); });
-      f.addEventListener("submit", e => {
-        e.preventDefault();
-        pac.q = document.getElementById("q").value; pac.d4 = document.getElementById("d4").value;
-        const words = norm(pac.q).split(/\s+/).filter(w => w.length >= 2);
-        if (!words.length) { pac.err = "Escriba su nombre."; return renderPatient(); }
-        if (pac.d4.length !== 4) { pac.err = "Escriba los 4 números de su seguro social."; return renderPatient(); }
-        const t = today();
-        const found = load().citas.filter(c => {
-          if (c.fecha < t || c.nss.slice(-4) !== pac.d4) return false;
-          const nameWords = norm(c.nombre).split(/\s+/);
-          return words.every(w => nameWords.some(n => n.startsWith(w)));
-        }).sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
-        if (!found.length) { pac.err = "No encontramos su cita. Revise su nombre y los 4 números, o llame al consultorio."; return renderPatient(); }
-        pac.err = ""; pac.found = found.map(c => c.id); pac.step = "cita"; renderPatient();
-      });
-    }
+    const f = $("f-search");
+    if (!f) return;
+    $("d4").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); });
+    f.addEventListener("submit", e => {
+      e.preventDefault();
+      pac.q = $("q").value; pac.d4 = $("d4").value;
+      const words = norm(pac.q).split(/\s+/).filter(w => w.length >= 2);
+      if (!words.length) { pac.err = "Escriba su nombre."; return renderPatient(); }
+      if (pac.d4.length !== 4) { pac.err = "Escriba los 4 números de su seguro social."; return renderPatient(); }
+      const t = today();
+      const found = load().citas.filter(c => {
+        if (c.fecha < t || c.nss.slice(-4) !== pac.d4) return false;
+        const nameWords = norm(c.nombre).split(/\s+/);
+        return words.every(w => nameWords.some(n => n.startsWith(w)));
+      }).sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+      if (!found.length) { pac.err = "No encontramos su cita. Revise su nombre y los 4 números, o llame al consultorio."; return renderPatient(); }
+      pac.err = ""; pac.found = found.map(c => c.id); pac.step = "cita"; renderPatient();
+    });
   }
-  function focusFirst() { const el = document.getElementById("q"); if (el) el.focus(); }
 
-  // ---------- vista consultorio ----------
+  // ---------- consultorio ----------
   let adm = { unlocked: false, tab: "agenda", day: today(), pasteText: "", pasteDay: today(), preview: null, msg: "" };
   try { adm.unlocked = sessionStorage.getItem(KEY + "-pin") === "ok"; } catch (e) {}
-
   const LABEL = { pendiente: "Sin avisar", camino: "En camino", no_va: "No va", llego: "Ya llegó" };
 
   function renderAdmin() {
+    const exit = '<button class="link" type="button" id="to-pac">Ver como paciente</button>';
     if (!adm.unlocked) {
-      app.innerHTML = '<form class="card lock" id="f-pin"><h2 style="font-size:24px">Entrar al consultorio</h2>' +
-        '<label class="field">PIN<input class="txt digits" id="pin" inputmode="numeric" maxlength="4" type="password" autocomplete="off"></label>' +
-        (adm.msg ? '<p class="error" role="alert">' + adm.msg + '</p>' : '') +
-        '<button class="big primary" type="submit">Entrar</button><p class="hint">PIN de prueba: <b>1234</b></p></form>';
-      document.getElementById("f-pin").addEventListener("submit", e => {
+      app.innerHTML = topBar(exit) + '<main class="wrap lock"><div class="lead"><h1>Panel del consultorio</h1><p>Escriba el PIN para entrar.</p></div>' +
+        '<form class="stack" id="f-pin"><div class="field"><label for="pin">PIN</label><input class="input digits" id="pin" inputmode="numeric" maxlength="4" type="password" autocomplete="off"></div>' +
+        (adm.msg ? '<div class="err" role="alert">' + ic("alert") + '<span>' + adm.msg + '</span></div>' : '') +
+        '<button class="btn-xl btn-blue" type="submit">Entrar</button><p class="tip">PIN de prueba: <b>1234</b></p></form></main>';
+      on("to-pac", () => go("pac"));
+      $("f-pin").addEventListener("submit", e => {
         e.preventDefault();
-        if (document.getElementById("pin").value === PIN) { adm.unlocked = true; adm.msg = ""; try { sessionStorage.setItem(KEY + "-pin", "ok"); } catch (x) {} }
-        else adm.msg = "PIN incorrecto.";
+        if ($("pin").value === PIN) { adm.unlocked = true; adm.msg = ""; try { sessionStorage.setItem(KEY + "-pin", "ok"); } catch (x) {} }
+        else adm.msg = "PIN incorrecto. Intente de nuevo.";
         renderAdmin();
       });
       return;
     }
-    let h = '<div class="admin"><div class="admin-head"><div><h1>' + CLINIC.nombre + '</h1><span style="color:var(--muted)">Panel del consultorio</span></div>' +
-      '<div class="tabs" role="tablist">' +
-      ['agenda:Agenda', 'pegar:Pegar agenda', 'qr:Cartel con QR'].map(s => { const [k, l] = s.split(":"); return '<button role="tab" type="button" data-tab="' + k + '" aria-selected="' + (adm.tab === k) + '">' + l + '</button>'; }).join("") +
-      '</div></div>';
-    if (adm.tab === "agenda") h += agendaHTML();
-    else if (adm.tab === "pegar") h += pasteHTML();
-    else h += qrHTML();
-    h += '</div>';
+    let h = topBar(exit) + '<main class="wrap wide admin"><nav class="nav" role="tablist">' +
+      [["agenda", "Agenda"], ["pegar", "Cargar citas"], ["qr", "Cartel con QR"]].map(([k, l]) => '<button role="tab" type="button" data-tab="' + k + '" aria-selected="' + (adm.tab === k) + '">' + l + '</button>').join("") +
+      '</nav>';
+    h += adm.tab === "agenda" ? agendaHTML() : adm.tab === "pegar" ? pasteHTML() : qrHTML();
+    h += '</main>';
     app.innerHTML = h;
     wireAdmin();
   }
 
   function agendaHTML() {
-    const db = load();
-    const list = db.citas.filter(c => c.fecha === adm.day).sort((a, b) => a.hora.localeCompare(b.hora));
-    const n = { camino: 0, no_va: 0, pendiente: 0, llego: 0 };
+    const list = load().citas.filter(c => c.fecha === adm.day).sort((a, b) => a.hora.localeCompare(b.hora));
+    const n = { camino: 0, pendiente: 0, no_va: 0, llego: 0 };
     list.forEach(c => n[c.estado]++);
     const isToday = adm.day === today(), now = nowHHMM();
-    let h = '<div class="toolbar"><input type="date" id="day" value="' + adm.day + '" aria-label="Día">' +
-      '<span class="daylabel">' + longDay(adm.day) + (isToday ? " · hoy" : "") + '</span></div>';
-    h += '<div class="counts">' + ["camino", "pendiente", "no_va", "llego"].map(k => '<div class="count ' + k + '"><b>' + n[k] + '</b><span>' + LABEL[k] + '</span></div>').join("") + '</div>';
-    h += '<div class="rows" aria-live="polite">';
-    if (!list.length) h += '<div class="empty">No hay citas este día. Use <b>Pegar agenda</b> para cargarlas.</div>';
-    list.forEach(c => {
+    let h = '<div class="bar"><div><h2>' + longDay(adm.day) + '</h2><span class="sub">' + (isToday ? "Hoy · " : "") + list.length + ' citas de ' + SLOTS.length + ' lugares</span></div>' +
+      '<input class="date-in" type="date" id="day" value="' + adm.day + '" aria-label="Cambiar día"></div>';
+    h += '<div class="stats">' + ["camino", "pendiente", "no_va", "llego"].map(k => '<div class="stat ' + k + '"><b>' + n[k] + '</b><span>' + LABEL[k] + '</span></div>').join("") + '</div>';
+    h += '<div class="list" aria-live="polite">';
+    if (!list.length) h += '<div class="empty">No hay citas este día. Use <b>Cargar citas</b> para agregarlas.</div>';
+    list.forEach((c, i) => {
       const late = isToday && c.estado === "pendiente" && c.hora < now;
-      const cls = late ? "late" : c.estado;
-      const pill = late ? '<span class="pill late">⚠ Ya es su hora, no avisó</span>' : '<span class="pill ' + c.estado + '">' + LABEL[c.estado] + (c.avisoEn && c.estado !== "pendiente" ? " · " + clock(c.avisoEn) : "") + '</span>';
+      const next = list[i + 1];
+      const current = isToday && c.hora <= now && (!next || next.hora > now);
+      const tag = late ? '<span class="tag late">Ya es su hora · sin aviso</span>'
+        : '<span class="tag ' + c.estado + '">' + LABEL[c.estado] + (c.avisoEn && c.estado !== "pendiente" ? " · " + clock(c.avisoEn) : "") + '</span>';
       const btn = c.estado === "llego"
-        ? '<button class="mini" type="button" data-undo="' + esc(c.id) + '">Deshacer</button>'
-        : '<button class="mini solid" type="button" data-llego="' + esc(c.id) + '">Ya llegó</button>';
-      h += '<div class="row ' + cls + '"><span class="hr">' + c.hora + '</span>' +
+        ? '<button class="sbtn ghost" type="button" data-undo="' + esc(c.id) + '">Deshacer</button>'
+        : '<button class="sbtn fill" type="button" data-llego="' + esc(c.id) + '">Llegó</button>';
+      h += '<div class="row ' + c.estado + (current ? " now" : "") + '"><span class="hr">' + c.hora + '</span>' +
         '<div style="min-width:0"><div class="name">' + esc(c.nombre) + '</div><div class="meta">NSS ••••' + esc(c.nss.slice(-4)) + '</div></div>' +
-        '<div class="right">' + pill + btn + '</div></div>';
+        '<div class="right">' + tag + btn + '</div></div>';
     });
-    h += '</div><div class="btnrow"><button class="btn ghost" type="button" id="reset">Restaurar citas de ejemplo</button></div>';
+    h += '</div><div class="row-btns"><button class="mbtn line" type="button" id="reset">Restaurar citas de ejemplo</button></div>';
     return h;
   }
 
-  // ---------- pegar agenda ----------
   function parseAgenda(text, defDay) {
     const out = [];
     text.split(/\r?\n/).forEach((raw, i) => {
@@ -484,20 +505,22 @@ tr.bad td { background: var(--stop-soft); color: var(--stop); }
   const SAMPLE_PASTE = "Nombre\tNSS\nPEREZ GARCIA JUAN CARLOS\t12345678901\nRUIZ SOTO ANA LAURA\t98765432105\nVEGA LUNA PEDRO\t4567-89-0123-4\nCRUZ MORA ELENA\t31826704419\nLARA NUÑEZ OSCAR\t77896102583";
 
   function pasteHTML() {
-    let h = '<section class="paste"><p class="help">Copie la lista de citas del sistema del IMSS o de su Excel y péguela aquí. Cada renglón necesita <b>nombre</b> y <b>número de seguro social</b>. Si la lista no trae horas, la app las reparte sola de <b>8:00 a 2:00</b>, una cada 15 minutos (hasta ' + SLOTS.length + ' pacientes), en el orden en que las pegó. Si el renglón trae fecha, se usa esa; si no, se usa la fecha de abajo.</p>' +
-      '<div class="toolbar"><label style="display:flex;gap:8px;align-items:center;font-weight:600">Fecha de la agenda <input type="date" id="pday" value="' + adm.pasteDay + '"></label>' +
-      '<button class="btn ghost" type="button" id="fill-sample">Llenar con un ejemplo</button></div>' +
-      '<textarea id="ptext" spellcheck="false" placeholder="08:00   PEREZ GARCIA JUAN   12345678901">' + esc(adm.pasteText) + '</textarea>' +
-      '<div class="btnrow"><button class="btn" type="button" id="do-preview">Revisar lista</button></div>';
+    let h = '<section class="stack paste"><div class="bar"><div><h2>Cargar citas</h2><span class="sub">Copie la lista del sistema del IMSS o de Excel y péguela aquí.</span></div></div>' +
+      '<p class="help">Cada renglón necesita <b>nombre</b> y <b>número de seguro social</b>. Si la lista no trae horas, se reparten solas de <b>8:00 a 2:00</b>, una cada 15 minutos (hasta ' + SLOTS.length + ' pacientes), en el orden de la lista.</p>' +
+      '<div class="row-btns"><label for="pday" style="font-weight:700;font-size:17px">Fecha de las citas</label><input class="date-in" type="date" id="pday" value="' + adm.pasteDay + '">' +
+      '<button class="mbtn line" type="button" id="fill-sample">Usar lista de ejemplo</button></div>' +
+      '<textarea id="ptext" spellcheck="false" aria-label="Lista de citas" placeholder="PEREZ GARCIA JUAN    12345678901">' + esc(adm.pasteText) + '</textarea>' +
+      '<div class="row-btns"><button class="mbtn" type="button" id="do-preview">Revisar lista</button></div>';
     if (adm.preview) {
       const ok = adm.preview.filter(r => !r.err.length);
-      h += '<p style="margin:0;font-weight:700">' + ok.length + ' citas listas' + (adm.preview.length - ok.length ? ' · ' + (adm.preview.length - ok.length) + ' con problemas (no se guardarán)' : '') + '</p>' +
-        '<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>NSS</th><th>Revisión</th></tr></thead><tbody>' +
-        adm.preview.map(r => '<tr class="' + (r.err.length ? "bad" : "") + '"><td class="mono">' + esc(r.fecha) + '</td><td class="mono">' + esc(r.hora || "—") + '</td><td>' + esc(r.nombre || "—") + '</td><td class="mono">' + esc(r.nss || "—") + '</td><td>' + (r.err.length ? "Renglón " + r.linea + ": " + r.err.join(", ") : "✓") + '</td></tr>').join("") +
+      const bad = adm.preview.length - ok.length;
+      h += '<p style="font-weight:700">' + ok.length + ' citas listas' + (bad ? ' · <span style="color:var(--error)">' + bad + ' con problemas (no se guardarán)</span>' : '') + '</p>' +
+        '<div class="tbl"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>NSS</th><th>Revisión</th></tr></thead><tbody>' +
+        adm.preview.map(r => '<tr class="' + (r.err.length ? "bad" : "") + '"><td class="mono">' + esc(r.fecha) + '</td><td class="mono">' + esc(r.hora || "—") + '</td><td>' + esc(r.nombre || "—") + '</td><td class="mono">' + esc(r.nss || "—") + '</td><td>' + (r.err.length ? "Renglón " + r.linea + ": " + r.err.join(", ") : "Correcto") + '</td></tr>').join("") +
         '</tbody></table></div>' +
-        '<div class="btnrow"><button class="btn" type="button" id="do-save"' + (ok.length ? "" : " disabled") + '>Guardar ' + ok.length + ' citas</button></div>';
+        '<div class="row-btns"><button class="mbtn orange" type="button" id="do-save"' + (ok.length ? "" : " disabled") + '>Guardar ' + ok.length + ' citas</button></div>';
     }
-    if (adm.msg) h += '<p class="toast" role="status">' + adm.msg + '</p>';
+    if (adm.msg) h += '<p class="okmsg" role="status">' + adm.msg + '</p>';
     return h + '</section>';
   }
 
@@ -513,52 +536,43 @@ tr.bad td { background: var(--stop-soft); color: var(--stop); }
       db.citas.push({ id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nss: r.nss, estado: old ? old.estado : "pendiente", avisoEn: old ? old.avisoEn : null });
     });
     save(db);
-    adm.msg = "Guardadas " + ok.length + " citas. Sus pacientes ya pueden buscarlas.";
     adm.preview = null; adm.pasteText = "";
     adm.day = [...days].sort()[0] || adm.day;
   }
 
   function qrHTML() {
-    return '<section class="poster"><div><h2>¿Tiene cita?<br>Avise si viene</h2>' +
-      '<ol><li>Escanee este código con la cámara de su celular.</li><li>Guárdelo para usarlo el día de su cita.</li><li>Busque su nombre y toque <b>Estoy en camino</b> o <b>Ya no voy</b>.</li></ol>' +
-      '<p style="color:var(--muted);font-size:15px">Ejemplo del cartel. En la versión real el código abre la página de sus pacientes.</p></div>' +
-      '<div class="qrbox" id="qr" aria-label="Código QR de ejemplo"></div></section>';
+    return '<section class="poster"><div><span class="eyebrow">' + CLINIC.doctor + ' · Consultorio 8</span><h2>¿Tiene cita? Avise si viene.</h2>' +
+      '<ol><li>Apunte la cámara de su celular a este código.</li><li>Guarde la página para el día de su cita.</li><li>Busque su nombre y toque <b>Voy en camino</b> o <b>Ya no voy a ir</b>.</li></ol>' +
+      '<p class="small">Ejemplo del cartel. En la versión real el código abre la página de sus pacientes.</p></div>' +
+      '<div class="qrbox" id="qr" role="img" aria-label="Código QR de ejemplo"></div></section>';
   }
 
   function wireAdmin() {
+    on("to-pac", () => go("pac"));
     app.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => { adm.tab = b.dataset.tab; adm.msg = ""; renderAdmin(); }));
-    const day = document.getElementById("day");
+    const day = $("day");
     if (day) day.addEventListener("change", () => { if (day.value) { adm.day = day.value; renderAdmin(); } });
     app.querySelectorAll("[data-llego]").forEach(b => b.addEventListener("click", () => { setEstado(b.dataset.llego, "llego"); renderAdmin(); }));
     app.querySelectorAll("[data-undo]").forEach(b => b.addEventListener("click", () => { setEstado(b.dataset.undo, "pendiente"); renderAdmin(); }));
-    const reset = document.getElementById("reset");
-    if (reset) reset.addEventListener("click", () => { save({ citas: sample() }); adm.day = today(); renderAdmin(); });
-    const pt = document.getElementById("ptext");
+    on("reset", () => { save({ citas: sample() }); adm.day = today(); renderAdmin(); });
+    const pt = $("ptext");
     if (pt) pt.addEventListener("input", () => { adm.pasteText = pt.value; });
-    const pd = document.getElementById("pday");
+    const pd = $("pday");
     if (pd) pd.addEventListener("change", () => { adm.pasteDay = pd.value || today(); });
-    const fs = document.getElementById("fill-sample");
-    if (fs) fs.addEventListener("click", () => { adm.pasteText = SAMPLE_PASTE; adm.preview = null; adm.msg = ""; renderAdmin(); });
-    const pv = document.getElementById("do-preview");
-    if (pv) pv.addEventListener("click", () => { adm.msg = ""; adm.preview = parseAgenda(adm.pasteText, adm.pasteDay); renderAdmin(); });
-    const sv = document.getElementById("do-save");
-    if (sv) sv.addEventListener("click", () => { savePreview(); adm.tab = "agenda"; renderAdmin(); });
-    const qr = document.getElementById("qr");
-    if (qr && window.QRCode) new QRCode(qr, { text: "https://ejemplo.mx/avisa-tu-cita", width: 360, height: 360, colorDark: "#0E1E3A", colorLight: "#FFFFFF" });
+    on("fill-sample", () => { adm.pasteText = SAMPLE_PASTE; adm.preview = null; adm.msg = ""; renderAdmin(); });
+    on("do-preview", () => { adm.msg = ""; adm.preview = parseAgenda(adm.pasteText, adm.pasteDay); renderAdmin(); });
+    on("do-save", () => { savePreview(); adm.tab = "agenda"; renderAdmin(); });
+    const qr = $("qr");
+    if (qr && window.QRCode) new QRCode(qr, { text: "https://areijond-bit.github.io/avisa-tu-cita/", width: 400, height: 400, colorDark: "#0F1B2D", colorLight: "#FFFFFF" });
   }
 
-  // ---------- cambio de vista ----------
+  // ---------- vistas ----------
   let view = location.hash === "#consultorio" ? "adm" : "pac";
-  function render() {
-    document.getElementById("v-pac").setAttribute("aria-pressed", view === "pac");
-    document.getElementById("v-adm").setAttribute("aria-pressed", view === "adm");
-    view === "pac" ? renderPatient() : renderAdmin();
-  }
-  document.getElementById("v-pac").addEventListener("click", () => { view = "pac"; render(); });
-  document.getElementById("v-adm").addEventListener("click", () => { view = "adm"; render(); });
-  // otra pestaña abierta (paciente en una, consultorio en otra) se actualiza sola
+  function go(v) { view = v; render(); window.scrollTo(0, 0); }
+  function render() { view === "pac" ? renderPatient() : renderAdmin(); }
+  // si el consultorio tiene otra pestaña abierta, se actualiza sola
   window.addEventListener("storage", e => { if (e.key === KEY && view === "adm") renderAdmin(); });
-  setInterval(() => { if (view === "adm" && adm.tab === "agenda") renderAdmin(); }, 60000);
+  setInterval(() => { if (view === "adm" && adm.tab === "agenda" && adm.unlocked) renderAdmin(); }, 60000);
   render();
 })();
 </script>
