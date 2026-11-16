@@ -391,7 +391,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     if (pac.step === "cargando") {
       h += '<div class="lead"><h1>Buscando su cita…</h1></div>';
     } else if (pac.step === "inicio") {
-      h += '<div class="lead"><h1>¿Va a venir a su cita?</h1><p>Avísele al doctor si ya va en camino o si ya no puede venir.</p></div>' + errBox(pac.err) +
+      h += '<div class="lead"><h1>¿Va a venir a su cita?</h1><p>Confirme o cancele su cita con el doctor.</p></div>' + errBox(pac.err) +
         '<button class="btn-xl btn-blue" id="go-search" type="button">' + ic("search") + 'Buscar mi cita</button>';
     } else if (pac.step === "buscar") {
       h += '<div class="lead"><span class="step">Paso 1 de 2</span><h1>Buscar mi cita</h1></div>' +
@@ -407,28 +407,28 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
         h += '<section class="appt"><div class="who">' + esc(c.nombre) + '</div><div class="body">' +
           '<div class="line">' + ic("cal") + '<span class="date">' + longDay(c.fecha) + '</span></div>' +
           '<div class="line">' + ic("clock") + '<span class="time">' + ampm(c.hora) + '</span></div>';
-        if (c.estado === "camino") h += '<div class="state camino">' + ic("check") + 'Ya avisó que va en camino</div>';
-        if (c.estado === "no_va") h += '<div class="state no_va">' + ic("x") + 'Ya avisó que no va a venir</div>';
-        if (c.estado === "llego") h += '<div class="state llego">' + ic("check") + 'Ya está registrada su llegada</div>';
+        if (c.estado === "camino") h += '<div class="state camino">' + ic("check") + 'Su cita está confirmada</div>';
+        if (c.estado === "no_va") h += '<div class="state no_va">' + ic("x") + 'Su cita está cancelada</div>';
+        if (c.estado === "llego") h += '<div class="state llego">' + ic("check") + 'Su cita ya fue atendida</div>';
         h += '</div></section>';
         if (c.estado !== "llego") {
           h += '<div class="actions">';
-          if (c.estado !== "camino") h += '<button class="btn-xl btn-blue" type="button" data-camino="' + esc(c.id) + '">' + ic("go") + 'Sí voy / voy en camino</button>';
-          if (c.estado !== "no_va") h += '<button class="btn-xl btn-orange-line" type="button" data-nova="' + esc(c.id) + '">' + ic("x") + 'Ya no voy a ir</button>';
+          if (c.estado !== "camino") h += '<button class="btn-xl btn-blue" type="button" data-camino="' + esc(c.id) + '">' + ic("go") + 'Confirmar mi cita</button>';
+          if (c.estado !== "no_va") h += '<button class="btn-xl btn-orange-line" type="button" data-nova="' + esc(c.id) + '">' + ic("x") + 'Cancelar mi cita</button>';
           h += '</div>';
         }
       });
       if (!pac.link) h += '<button class="btn-xl btn-plain" type="button" id="restart">' + ic("back") + 'Salir</button>';
     } else if (pac.step === "confirmar_no") {
-      h += '<div class="lead"><h1>¿Seguro que ya no va a venir?</h1><p>Su cita del ' + longDay(sel.fecha).toLowerCase() + ' a las ' + ampm(sel.hora) + ' se le dará a otro paciente.</p></div>' +
+      h += '<div class="lead"><h1>¿Seguro que quiere cancelar su cita?</h1><p>Su cita del ' + longDay(sel.fecha).toLowerCase() + ' a las ' + ampm(sel.hora) + ' se le dará a otro paciente.</p></div>' +
         errBox(pac.err) +
-        '<div class="actions"><button class="btn-xl btn-orange" type="button" id="yes-no">' + ic("check") + 'Sí, ya no voy</button>' +
+        '<div class="actions"><button class="btn-xl btn-orange" type="button" id="yes-no">' + ic("check") + 'Sí, cancelar mi cita</button>' +
         '<button class="btn-xl btn-plain" type="button" id="cancel-no">' + ic("back") + 'No, regresar</button></div>';
     } else if (pac.step === "listo") {
       const camino = sel.estado === "camino";
       h += '<div class="done"><div class="ok ' + (camino ? "blue" : "orange") + '">' + ic("check") + '</div>' +
-        '<h1>Listo, ya le avisamos al doctor</h1>' +
-        '<p>' + (camino ? "Le esperan el " + longDay(sel.fecha).toLowerCase() + " a las " + ampm(sel.hora) + "." : "Gracias por avisar.") + '</p></div>' +
+        '<h1>' + (camino ? 'Su cita está confirmada' : 'Su cita está cancelada') + '</h1>' +
+        '<p>' + (camino ? "Le esperamos el " + longDay(sel.fecha).toLowerCase() + " a las " + ampm(sel.hora) + "." : "Gracias por avisar al doctor.") + '</p></div>' +
         '<button class="btn-xl btn-plain" type="button" id="restart">Terminar</button>';
     }
     app.innerHTML = h + '</main>';
@@ -487,7 +487,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
     pasteText: "", pasteDay: addDays(today(), 1), rows: null, ocr: null, showPaste: false,
     pacientes: null, pq: "", pedit: null, editTel: null, envio: null
   };
-  const LABEL = { pendiente: "Sin avisar", camino: "En camino", no_va: "No va", llego: "Ya llegó" };
+  const LABEL = { pendiente: "No confirmado", camino: "Confirmado", no_va: "Cancelado", llego: "Atendido" };
 
   async function loadDay() {
     try { adm.list = (await staff("agenda_dia", { p_fecha: adm.day })).citas; adm.loadErr = ""; }
@@ -527,7 +527,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 
   // ---------- Agenda + WhatsApp ----------
   const mensaje = c => "Hola, " + c.nombre + ". Le recordamos su cita con el " + CLINIC.doctor + " (" + CLINIC.consultorio + ") el " +
-    longDay(c.fecha).toLowerCase() + " a las " + ampm(c.hora) + ".\n\n¿Va a venir? Toque aquí para avisar:\n" + SITE_URL + "?c=" + c.token;
+    longDay(c.fecha).toLowerCase() + " a las " + ampm(c.hora) + ".\n\n¿Va a venir? Toque aquí para confirmar o cancelar:\n" + SITE_URL + "?c=" + c.token;
   const waLink = c => "https://wa.me/" + telWa(c.telefono) + "?text=" + encodeURIComponent(mensaje(c));
   const porEnviar = () => (adm.list || []).filter(c => c.telefono && c.estado === "pendiente" && !c.enviado_en);
 
@@ -567,11 +567,11 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       const late = isToday && c.estado === "pendiente" && c.hora < now;
       const next = list[i + 1];
       const current = isToday && c.hora <= now && (!next || next.hora > now);
-      const tag = late ? '<span class="tag late">Ya es su hora · sin aviso</span>'
+      const tag = late ? '<span class="tag late">No confirmado · ya es su hora</span>'
         : '<span class="tag ' + c.estado + '">' + LABEL[c.estado] + (c.avisoEn || c.aviso_en ? (c.estado !== "pendiente" ? " · " + clock(c.aviso_en) : "") : "") + '</span>';
       const llego = c.estado === "llego"
         ? '<button class="sbtn ghost" type="button" data-undo="' + c.id + '">Deshacer</button>'
-        : '<button class="sbtn fill" type="button" data-llego="' + c.id + '">Llegó</button>';
+        : '<button class="sbtn fill" type="button" data-llego="' + c.id + '">Atendido</button>';
       const tel = c.telefono
         ? '<button class="telbtn" type="button" data-tel="' + c.id + '">' + ic("phone") + telShow(c.telefono) + '</button>' + (c.enviado_en ? ' <span class="sent">' + ic("check") + 'enviado</span>' : '')
         : '<button class="telbtn add" type="button" data-tel="' + c.id + '">+ Agregar teléfono</button>';
@@ -768,7 +768,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 
   function qrHTML() {
     return '<section class="poster"><div><span class="eyebrow">' + CLINIC.doctor + ' · ' + CLINIC.consultorio + '</span><h2>¿Tiene cita? Avise si viene.</h2>' +
-      '<ol><li>Apunte la cámara de su celular a este código.</li><li>Guarde la página para el día de su cita.</li><li>Escriba su nombre y toque <b>Sí voy</b> o <b>Ya no voy a ir</b>.</li></ol>' +
+      '<ol><li>Apunte la cámara de su celular a este código.</li><li>Guarde la página para el día de su cita.</li><li>Escriba su nombre y toque <b>Confirmar</b> o <b>Cancelar</b>.</li></ol>' +
       '<p class="small">' + SITE_URL.replace(/^https:\/\//, "") + '</p></div>' +
       '<div class="qrbox" id="qr" role="img" aria-label="Código QR de la página para pacientes"></div></section>';
   }
