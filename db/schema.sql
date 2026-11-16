@@ -5,9 +5,9 @@
 --
 -- Quién puede hacer qué:
 --   * Pacientes (sin cuenta): solo pueden buscar su cita con nombre y apellido
---     y avisar "en camino" / "no va". No pueden ver la lista de pacientes.
---   * Personal (doctor y asistente): entran con correo y contraseña y ven/editan todo,
---     pero solo si su correo está en la tabla "personal" (al final de este archivo).
+--     y confirmar o cancelar. No pueden ver la lista de pacientes.
+--   * Consultorio (doctor y asistente): entran con una contraseña que se revisa aquí
+--     mismo (tabla "ajustes", cifrada). Todo lo del panel pasa por funciones que la piden.
 
 create table if not exists public.citas (
   id         uuid primary key default gen_random_uuid(),
@@ -19,38 +19,12 @@ create table if not exists public.citas (
   creado_en  timestamptz not null default now()
 );
 create index if not exists citas_fecha on public.citas (fecha);
-
--- Versión anterior pedía los 4 números del seguro: ya no se usan
-drop function if exists public.buscar_cita(text, text);
-drop function if exists public.avisar_cita(uuid, text, text);
-alter table public.citas drop column if exists nss4;
 create unique index if not exists citas_fecha_hora on public.citas (fecha, hora);
 
-create table if not exists public.personal (
-  email text primary key
-);
-
 alter table public.citas enable row level security;
-alter table public.personal enable row level security;
 
--- Pacientes (anon) nunca leen las tablas directo; el personal sí, filtrado por las reglas de abajo
-revoke all on public.citas from anon;
-revoke all on public.personal from anon, authenticated;
-grant select, insert, update, delete on public.citas to authenticated;
-
--- ¿La persona que entró es del consultorio?
-create or replace function public.es_personal()
-returns boolean
-language sql stable security definer set search_path = public
-as $$
-  select exists (select 1 from public.personal where lower(email) = lower(auth.jwt() ->> 'email'));
-$$;
-
-drop policy if exists "personal ve y edita citas" on public.citas;
-create policy "personal ve y edita citas" on public.citas
-  for all to authenticated
-  using (public.es_personal())
-  with check (public.es_personal());
+-- Nadie lee las tablas directo; todo pasa por las funciones de abajo
+revoke all on public.citas from anon, authenticated;
 
 -- Quita acentos y mayúsculas para comparar nombres
 create or replace function public.norm_txt(t text)
@@ -182,19 +156,6 @@ returns boolean
 language sql volatile security definer set search_path = public
 as $$ select public.clave_ok(p_clave); $$;
 
-create or replace function public.agenda_dia(p_clave text, p_fecha date)
-returns jsonb
-language plpgsql volatile security definer set search_path = public
-as $$
-begin
-  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
-  return jsonb_build_object('ok', true, 'citas', coalesce((
-    select jsonb_agg(jsonb_build_object('id', c.id, 'fecha', c.fecha, 'hora', to_char(c.hora, 'HH24:MI'),
-                                        'nombre', c.nombre, 'estado', c.estado, 'aviso_en', c.aviso_en) order by c.hora)
-    from public.citas c where c.fecha = p_fecha), '[]'::jsonb));
-end;
-$$;
-
 create or replace function public.marcar_cita(p_clave text, p_id uuid, p_estado text)
 returns jsonb
 language plpgsql volatile security definer set search_path = public
@@ -203,32 +164,6 @@ begin
   if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
   if p_estado not in ('pendiente', 'camino', 'no_va', 'llego') then return jsonb_build_object('ok', false); end if;
   update public.citas set estado = p_estado, aviso_en = now() where id = p_id;
-  return jsonb_build_object('ok', true);
-end;
-$$;
-
--- Guarda la lista de un día: reemplaza la anterior y conserva los avisos ya hechos
-create or replace function public.guardar_citas(p_clave text, p_citas jsonb)
-returns jsonb
-language plpgsql volatile security definer set search_path = public
-as $$
-declare
-  viejas jsonb;
-begin
-  if not public.clave_ok(p_clave) then return jsonb_build_object('ok', false); end if;
-  select coalesce(jsonb_agg(to_jsonb(c)), '[]'::jsonb) into viejas
-    from public.citas c
-   where c.fecha in (select distinct (r ->> 'fecha')::date from jsonb_array_elements(p_citas) r);
-  delete from public.citas
-   where fecha in (select distinct (r ->> 'fecha')::date from jsonb_array_elements(p_citas) r);
-  insert into public.citas (fecha, hora, nombre, estado, aviso_en)
-  select (n ->> 'fecha')::date, (n ->> 'hora')::time, trim(n ->> 'nombre'),
-         coalesce(v.estado, 'pendiente'), v.aviso_en
-    from jsonb_array_elements(p_citas) n
-    left join jsonb_to_recordset(viejas) as v(fecha date, hora time, nombre text, estado text, aviso_en timestamptz)
-      on v.fecha = (n ->> 'fecha')::date and v.hora = (n ->> 'hora')::time
-     and public.norm_txt(v.nombre) = public.norm_txt(n ->> 'nombre')
-   where trim(coalesce(n ->> 'nombre', '')) <> '';
   return jsonb_build_object('ok', true);
 end;
 $$;
