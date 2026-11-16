@@ -447,8 +447,16 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   async function staff(fn, args) {
     const r = await rpc(fn, Object.assign({ p_clave: clave() }, args || {}));
     if (!r || r.ok !== true) { salir(); throw new Error("clave"); }
+    if (!/^(agenda_dia|pacientes_lista)$/.test(fn)) avisarCambio();
     return r;
   }
+
+  // Aviso en vivo: cuando alguien cambia algo (doctor, asistente o un paciente),
+  // las demás pantallas abiertas vuelven a cargar la agenda al instante.
+  const canal = sb.channel("consultorio-alba", { config: { broadcast: { self: false } } });
+  let alCambiar = () => {};
+  canal.on("broadcast", { event: "cambio" }, () => alCambiar()).subscribe();
+  function avisarCambio() { canal.send({ type: "broadcast", event: "cambio", payload: {} }).catch(() => {}); }
   function salir() { try { localStorage.removeItem(KEY + "-clave"); } catch (e) {} adm.unlocked = false; if (view === "adm") renderAdmin(); }
 
   const app = document.getElementById("app");
@@ -526,6 +534,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       const r = await rpc("avisar_cita", { p_id: id, p_estado: estado });
       if (!r) { pac.err = "Esta cita ya no se puede cambiar."; pac.step = "cita"; return renderPatient(); }
       pac.found.find(c => c.id === id).estado = r; pac.sel = id; pac.err = ""; pac.step = "listo";
+      avisarCambio();
     } catch (e) { pac.err = NET; }
     renderPatient();
   }
@@ -1197,7 +1206,17 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 
   let listening = false;
   function startAdmin() {
-    if (!listening) { setInterval(() => { if (!document.hidden && adm.unlocked && view === "adm" && adm.tab === "agenda" && !adm.envio) loadDay(); }, 10000); listening = true; }
+    if (!listening) {
+      const refrescar = () => {
+        if (!adm.unlocked || view !== "adm") return;
+        if (adm.tab === "agenda" && !adm.envio) loadDay();
+        if (adm.tab === "pacientes") loadPacientes();
+      };
+      alCambiar = refrescar;                                   // al instante, cuando otra pantalla cambia algo
+      setInterval(() => { if (!document.hidden) refrescar(); }, 15000);   // respaldo por si se pierde un aviso
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) refrescar(); });
+      listening = true;
+    }
     adm.list = null; renderAdmin(); loadDay();
   }
 
