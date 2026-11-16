@@ -57,7 +57,7 @@ on conflict (id) do update set clave_hash = excluded.clave_hash;
 Arriba de `js/app.js`:
 
 - `CONFIG`: URL y llave pública de Supabase.
-- `CLINIC`: nombre del doctor, iniciales, especialidad y consultorio.
+- `CLINIC`: nombre del doctor, iniciales y el título que aparece en la página y en los mensajes de WhatsApp.
 - `SITE_URL`: dirección pública de la página (se usa en los links de WhatsApp y en el QR).
 - `HORARIO`: de 8:00 a 14:00, una cita cada 15 minutos (24 lugares).
 

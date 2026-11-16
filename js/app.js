@@ -1,7 +1,7 @@
 (function () {
   // ======== CONFIGURACIÓN ========
   const CONFIG = { url: "https://soijjnyeiziokkegzrmn.supabase.co", key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvaWpqbnllaXppb2trZWd6cm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ4MDEzODgsImV4cCI6MjExMDM3NzM4OH0.Y_DJAtGIL3APekJzg0YfVDsfN-7_6Y0SM0xYYMAKmEA" };
-  const CLINIC = { doctor: "Dr. Alejandro Alba", iniciales: "AA", especialidad: "Medicina Familiar", consultorio: "Consultorio 8" };
+  const CLINIC = { doctor: "Dr. Alejandro Alba", iniciales: "AA", titulo: "Médico Familiar Certificado" };
   const SITE_URL = "https://areijond-bit.github.io/avisa-tu-cita/";
   // Horario de consulta: de 8:00 a 14:00, una consulta cada 15 minutos (24 lugares)
   const HORARIO = { inicio: 8 * 60, fin: 14 * 60, cada: 15 };
@@ -87,7 +87,7 @@
 
   function topBar() {
     return '<header class="top"><div class="wrap"><div class="avatar">' + CLINIC.iniciales + '</div>' +
-      '<div class="id"><span class="doc">' + CLINIC.doctor + '</span><span class="place">' + CLINIC.especialidad + " · " + CLINIC.consultorio + '</span></div></div></header>';
+      '<div class="id"><span class="doc">' + CLINIC.doctor + '</span><span class="place">' + CLINIC.especialidad + " · " + CLINIC.titulo + '</span></div></div></header>';
   }
 
   // =================== PACIENTE ===================
@@ -232,7 +232,7 @@
     const pendientes = (adm.list || []).filter(c => c.estado === "pendiente").length;
     const secciones = [["agenda", "Agenda", "cal"], ["cargar", "Cargar citas", "camera"], ["pacientes", "Pacientes", "users"], ["qr", "Cartel con QR", "qr"]];
     let h = '<div class="shell"><aside class="side"><div class="brand"><div class="avatar">' + CLINIC.iniciales + '</div>' +
-      '<div><b>' + CLINIC.doctor + '</b><span>' + CLINIC.consultorio + '</span></div></div><nav class="side-nav" aria-label="Secciones">' +
+      '<div><b>' + CLINIC.doctor + '</b><span>' + CLINIC.titulo + '</span></div></div><nav class="side-nav" aria-label="Secciones">' +
       secciones.map(([k, l, i]) => '<button type="button" class="nav-i' + (adm.tab === k ? " on" : "") + '" data-tab="' + k + '"' + (adm.tab === k ? ' aria-current="page"' : "") + '>' +
         ic(i) + '<span>' + l + '</span>' + (k === "agenda" && pendientes ? '<span class="count" title="Sin confirmar">' + pendientes + '</span>' : "") + '</button>').join("") +
       '</nav><button type="button" class="nav-i out" id="logout">' + ic("logout") + '<span>Salir</span></button></aside><main class="main">';
@@ -242,7 +242,7 @@
   }
 
   // ---------- Agenda + WhatsApp ----------
-  const mensaje = c => "Hola, " + c.nombre + ". Le recordamos su cita con el " + CLINIC.doctor + " (" + CLINIC.consultorio + ") el " +
+  const mensaje = c => "Hola, " + c.nombre + ". Le recordamos su cita con el " + CLINIC.doctor + " (" + CLINIC.titulo + ") el " +
     longDay(c.fecha).toLowerCase() + " a las " + ampm(c.hora) + ".\n\n¿Va a venir? Toque aquí para confirmar o cancelar:\n" + SITE_URL + "?c=" + c.token;
   // En celular abre la app de WhatsApp; en computadora, WhatsApp Web siempre en la misma pestaña
   const esCelular = window.matchMedia("(pointer: coarse)").matches;
@@ -706,7 +706,7 @@
   document.addEventListener("keydown", e => { if (e.key === "Escape" && dp.open) { dp.open = null; renderAdmin(); } });
 
   function qrHTML() {
-    return '<section class="poster"><div><span class="eyebrow">' + CLINIC.doctor + ' · ' + CLINIC.consultorio + '</span><h2>¿Tiene cita? Avise si viene.</h2>' +
+    return '<section class="poster"><div><span class="eyebrow">' + CLINIC.doctor + ' · ' + CLINIC.titulo + '</span><h2>¿Tiene cita? Avise si viene.</h2>' +
       '<ol><li>Apunte la cámara de su celular a este código.</li><li>Guarde la página para el día de su cita.</li><li>Escriba su nombre y toque <b>Confirmar</b> o <b>Cancelar</b>.</li></ol>' +
       '<p class="small">' + SITE_URL.replace(/^https:\/\//, "") + '</p></div>' +
       '<div class="qrbox" id="qr" role="img" aria-label="Código QR de la página para pacientes"></div></section>';
