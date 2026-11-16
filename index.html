@@ -328,7 +328,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
       c.estado = estado; c.avisoEn = new Date().toISOString(); dsave(db); return estado;
     },
     async sesion() { try { return sessionStorage.getItem(KEY + "-pin") === "ok"; } catch (e) { return false; } },
-    async entrar(user, pass) { if (pass !== PIN_PRUEBA) return false; try { sessionStorage.setItem(KEY + "-pin", "ok"); } catch (e) {} return true; },
+    async entrar(pass) { if (pass !== PIN_PRUEBA) return false; try { sessionStorage.setItem(KEY + "-pin", "ok"); } catch (e) {} return true; },
     async salir() { try { sessionStorage.removeItem(KEY + "-pin"); } catch (e) {} },
     async dia(day) { return dload().citas.filter(c => c.fecha === day).sort((a, b) => a.hora.localeCompare(b.hora)); },
     async marcar(id, estado) { const db = dload(), c = db.citas.find(x => x.id === id); if (c) { c.estado = estado; c.avisoEn = new Date().toISOString(); dsave(db); } },
@@ -351,22 +351,25 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   const Real = {
     async buscar(q) { return ok(await sb.rpc("buscar_cita", { p_nombre: q })).map(fix); },
     async avisar(id, estado) { return ok(await sb.rpc("avisar_cita", { p_id: id, p_estado: estado })); },
-    async sesion() { const { data } = await sb.auth.getSession(); return !!data.session; },
-    async entrar(email, pass) { const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password: pass }); return !error; },
-    async salir() { await sb.auth.signOut(); },
-    async dia(day) { return ok(await sb.from("citas").select("id,fecha,hora,nombre,estado,aviso_en").eq("fecha", day).order("hora")).map(fix); },
-    async marcar(id, estado) { ok(await sb.from("citas").update({ estado, aviso_en: new Date().toISOString() }).eq("id", id)); },
-    async guardar(rows) {
-      const days = [...new Set(rows.map(r => r.fecha))];
-      const old = ok(await sb.from("citas").select("fecha,hora,nombre,estado,aviso_en").in("fecha", days));
-      const prev = new Map(old.map(c => [c.fecha + "|" + String(c.hora).slice(0, 5) + "|" + norm(c.nombre), c]));
-      ok(await sb.from("citas").delete().in("fecha", days));
-      ok(await sb.from("citas").insert(rows.map(r => {
-        const o = prev.get(r.fecha + "|" + r.hora + "|" + norm(r.nombre));
-        return { fecha: r.fecha, hora: r.hora, nombre: r.nombre, estado: o ? o.estado : "pendiente", aviso_en: o ? o.aviso_en : null };
-      })));
+    // El consultorio entra con una contraseña que revisa la base de datos; este celular la recuerda
+    clave() { try { return localStorage.getItem(KEY + "-clave") || ""; } catch (e) { return ""; } },
+    async sesion() { const c = Real.clave(); return !!c && ok(await sb.rpc("entrar_consultorio", { p_clave: c })) === true; },
+    async entrar(pass) {
+      const good = ok(await sb.rpc("entrar_consultorio", { p_clave: pass })) === true;
+      if (good) { try { localStorage.setItem(KEY + "-clave", pass); } catch (e) {} }
+      return good;
     },
-    escuchar(cb) { sb.channel("citas").on("postgres_changes", { event: "*", schema: "public", table: "citas" }, () => cb()).subscribe(); }
+    async salir() { try { localStorage.removeItem(KEY + "-clave"); } catch (e) {} },
+    async conClave(fn, args) {
+      const r = ok(await sb.rpc(fn, Object.assign({ p_clave: Real.clave() }, args)));
+      if (!r || r.ok !== true) { await Real.salir(); adm.unlocked = false; renderAdmin(); throw new Error("clave"); }
+      return r;
+    },
+    async dia(day) { return (await Real.conClave("agenda_dia", { p_fecha: day })).citas.map(fix); },
+    async marcar(id, estado) { await Real.conClave("marcar_cita", { p_id: id, p_estado: estado }); },
+    async guardar(rows) { await Real.conClave("guardar_citas", { p_citas: rows }); },
+    // Revisa si hay avisos nuevos cada 10 segundos
+    escuchar(cb) { setInterval(() => { if (!document.hidden) cb(); }, 10000); }
   };
   const store = REAL ? Real : Demo;
 
@@ -487,20 +490,19 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   function renderAdmin() {
     const right = REAL ? (adm.unlocked ? '<button class="link" type="button" id="logout">Salir</button>' : '') : '<button class="link" type="button" id="to-pac">Ver como paciente</button>';
     if (!adm.unlocked) {
-      app.innerHTML = topBar(right) + '<main class="wrap lock"><div class="lead"><h1>Panel del consultorio</h1><p>' + (REAL ? "Entre con su correo y contraseña." : "Escriba el PIN para entrar.") + '</p></div>' +
+      app.innerHTML = topBar(right) + '<main class="wrap lock"><div class="lead"><h1>Panel del consultorio</h1><p>Escriba la contraseña para entrar.</p></div>' +
         '<form class="stack" id="f-login">' +
-        (REAL ? '<div class="field"><label for="email">Correo</label><input class="input" id="email" type="email" autocomplete="username" style="font-size:20px"></div>' +
-                '<div class="field"><label for="pass">Contraseña</label><input class="input" id="pass" type="password" autocomplete="current-password" style="font-size:20px"></div>'
-              : '<div class="field"><label for="pass">PIN</label><input class="input digits" id="pass" inputmode="numeric" maxlength="4" type="password" autocomplete="off"></div>') +
+        '<div class="field"><label for="pass">Contraseña</label><input class="input digits" id="pass" inputmode="numeric" type="password" autocomplete="current-password"></div>' +
         errBox(adm.msg) +
-        '<button class="btn-xl btn-blue" type="submit">Entrar</button>' + (REAL ? '' : '<p class="tip">PIN de prueba: <b>1234</b></p>') + '</form></main>';
+        '<button class="btn-xl btn-blue" type="submit">Entrar</button>' + (REAL ? '' : '<p class="tip">Contraseña de prueba: <b>1234</b></p>') + '</form></main>';
       on("to-pac", () => go("pac"));
       $("f-login").addEventListener("submit", async e => {
         e.preventDefault(); busy();
-        let okLogin = false;
-        try { okLogin = await store.entrar(REAL ? $("email").value : "", $("pass").value); } catch (x) {}
+        let okLogin = false, fallo = "Contraseña incorrecta. Intente de nuevo.";
+        try { okLogin = await store.entrar($("pass").value.trim()); }
+        catch (x) { fallo = /intentos/i.test(x.message || "") ? "Demasiados intentos. Espere 15 minutos." : NET; }
         if (okLogin) { adm.unlocked = true; adm.msg = ""; startAdmin(); }
-        else { adm.msg = REAL ? "Correo o contraseña incorrectos." : "PIN incorrecto. Intente de nuevo."; renderAdmin(); }
+        else { adm.msg = fallo; renderAdmin(); }
       });
       return;
     }
