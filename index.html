@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Avisa tu Cita</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&family=Atkinson+Hyperlegible+Mono:wght@500;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* Layout: una sola columna angosta para el paciente (pocas opciones, botones enormes); el panel del consultorio usa una lista por hora. */
+:root {
+  --bg: #FFFFFF;
+  --surface: #F3F7FD;
+  --fg: #0E1E3A;
+  --muted: #4A5872;
+  --line: #D2DCEC;
+  --accent: #1A56C4;
+  --accent-ink: #FFFFFF;
+  --go: #1A56C4;
+  --go-soft: #E3ECFB;
+  --stop: #C2560A;
+  --stop-soft: #FDEEE2;
+  --warn: #B3261E;
+  --warn-soft: #FBE7E5;
+  --idle-soft: #ECEFF4;
+  --arrived: #2B7A4B;
+  --arrived-soft: #E3F3E9;
+  --font: "Atkinson Hyperlegible Next", "Segoe UI", system-ui, sans-serif;
+  --mono: "Atkinson Hyperlegible Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B1426; --surface: #13203A; --fg: #EEF3FC; --muted: #A6B4CE; --line: #2A3A5A;
+    --accent: #6FA0FF; --accent-ink: #081733;
+    --go: #6FA0FF; --go-soft: #1A2D55; --stop: #FF9F57; --stop-soft: #3D2410;
+    --warn: #FF8A80; --warn-soft: #3F1D1A; --idle-soft: #1C2A45;
+    --arrived: #6FD49A; --arrived-soft: #15382A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B1426; --surface: #13203A; --fg: #EEF3FC; --muted: #A6B4CE; --line: #2A3A5A;
+  --accent: #6FA0FF; --accent-ink: #081733;
+  --go: #6FA0FF; --go-soft: #1A2D55; --stop: #FF9F57; --stop-soft: #3D2410;
+  --warn: #FF8A80; --warn-soft: #3F1D1A; --idle-soft: #1C2A45;
+  --arrived: #6FD49A; --arrived-soft: #15382A;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font);
+  font-size: 18px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 40px;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.2; }
+
+.demo-bar {
+  display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between;
+  max-width: 960px; margin: 0 auto 16px; font-size: 14px; color: var(--muted);
+}
+.switch { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.switch button { border: 0; background: none; padding: 6px 14px; font-size: 14px; font-weight: 600; }
+.switch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+/* ---------- Paciente ---------- */
+.patient { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.clinic { display: flex; flex-direction: column; gap: 4px; }
+.clinic h1 { font-size: 28px; font-weight: 800; }
+.clinic p { margin: 0; color: var(--muted); font-size: 18px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+.big {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  width: 100%; min-height: 76px; padding: 14px 20px; border-radius: 14px;
+  font-size: 24px; font-weight: 800; border: 3px solid transparent; text-align: center;
+}
+.big .ico { font-size: 30px; line-height: 1; }
+.big.primary { background: var(--accent); color: var(--accent-ink); }
+.big.go { background: var(--go); color: #fff; }
+.big.stop { background: var(--surface); color: var(--stop); border-color: var(--stop); }
+.big.stop-solid { background: var(--stop); color: #fff; }
+.big.plain { background: var(--surface); color: var(--fg); border-color: var(--line); font-size: 20px; min-height: 60px; }
+:root[data-theme="dark"] .big.go, :root[data-theme="dark"] .big.stop-solid { color: #0F1714; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .big.go, :root:not([data-theme="light"]) .big.stop-solid { color: #0F1714; } }
+
+label.field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 20px; }
+label.field small { font-weight: 400; color: var(--muted); font-size: 16px; }
+input.txt {
+  width: 100%; min-height: 60px; padding: 10px 14px; font-size: 24px;
+  border: 2px solid var(--line); border-radius: 12px; background: var(--bg);
+}
+input.txt:focus { border-color: var(--accent); outline: none; }
+input.digits { font-family: var(--mono); letter-spacing: 0.3em; max-width: 220px; }
+.hint { font-size: 15px; color: var(--muted); background: var(--idle-soft); border-radius: 10px; padding: 10px 12px; }
+.error { color: var(--stop); font-weight: 600; font-size: 19px; margin: 0; }
+
+.appt { display: flex; flex-direction: column; gap: 4px; }
+.appt .who { font-size: 20px; color: var(--muted); }
+.appt .day { font-size: 28px; font-weight: 800; }
+.appt .time { font-family: var(--mono); font-size: 40px; font-weight: 700; color: var(--accent); }
+.status-line { font-size: 19px; font-weight: 600; border-radius: 10px; padding: 10px 14px; }
+.status-line.camino { background: var(--go-soft); color: var(--go); }
+.status-line.no_va { background: var(--stop-soft); color: var(--stop); }
+.status-line.llego { background: var(--arrived-soft); color: var(--arrived); }
+
+.done { text-align: center; align-items: center; }
+.done .mark { font-size: 64px; line-height: 1; }
+.done h2 { font-size: 30px; }
+.done p { margin: 0; font-size: 20px; }
+
+.call { display: flex; flex-direction: column; gap: 4px; align-items: center; text-align: center; color: var(--muted); font-size: 16px; }
+.call a { font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--accent); text-decoration: none; user-select: all; }
+
+/* ---------- Consultorio ---------- */
+.admin { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.admin-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between; }
+.admin-head h1 { font-size: 26px; font-weight: 800; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tabs button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 14px; font-size: 16px; font-weight: 600; }
+.tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.toolbar input[type="date"] { padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 16px; }
+.toolbar .daylabel { font-weight: 700; font-size: 18px; }
+
+.counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.count { border-radius: 12px; padding: 10px 14px; display: flex; flex-direction: column; }
+.count b { font-family: var(--mono); font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.count span { font-size: 14px; font-weight: 600; }
+.count.camino { background: var(--go-soft); color: var(--go); }
+.count.no_va { background: var(--stop-soft); color: var(--stop); }
+.count.pendiente { background: var(--idle-soft); color: var(--muted); }
+.count.llego { background: var(--arrived-soft); color: var(--arrived); }
+@media (max-width: 560px) { .counts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.rows { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); border-left: 5px solid transparent; }
+.row:first-child { border-top: 0; }
+.row.camino { border-left-color: var(--go); }
+.row.no_va { border-left-color: var(--stop); }
+.row.no_va .name { text-decoration: line-through; color: var(--muted); }
+.row.llego { border-left-color: var(--arrived); }
+.row.late { border-left-color: var(--warn); }
+.row .hr { font-family: var(--mono); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
+.row .name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.row .meta { font-size: 14px; color: var(--muted); font-family: var(--mono); }
+.row .right { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: end; }
+.pill { font-size: 14px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.pill.camino { background: var(--go-soft); color: var(--go); }
+.pill.no_va { background: var(--stop-soft); color: var(--stop); }
+.pill.pendiente { background: var(--idle-soft); color: var(--muted); }
+.pill.llego { background: var(--arrived-soft); color: var(--arrived); }
+.pill.late { background: var(--warn-soft); color: var(--warn); }
+.mini { border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 6px 10px; font-size: 14px; font-weight: 600; }
+.mini.solid { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+@media (max-width: 560px) {
+  .row { grid-template-columns: 64px minmax(0, 1fr); }
+  .row .right { grid-column: 1 / -1; justify-content: start; }
+}
+.empty { padding: 28px 16px; text-align: center; color: var(--muted); }
+
+.paste { display: flex; flex-direction: column; gap: 14px; }
+.paste textarea { width: 100%; min-height: 200px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-family: var(--mono); font-size: 15px; }
+.paste .help { font-size: 15px; color: var(--muted); max-width: 65ch; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { padding: 8px 12px; text-align: left; border-top: 1px solid var(--line); white-space: nowrap; }
+th { border-top: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+td.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+tr.bad td { background: var(--stop-soft); color: var(--stop); }
+.btnrow { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { border: 0; border-radius: 10px; padding: 10px 18px; font-weight: 700; font-size: 16px; background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: var(--surface); color: var(--fg); border: 1px solid var(--line); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.toast { font-weight: 600; color: var(--go); }
+
+.poster { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
+.poster h2 { font-size: 30px; font-weight: 800; }
+.poster p { margin: 8px 0 0; font-size: 18px; max-width: 40ch; }
+.poster ol { margin: 12px 0 0; padding-left: 22px; font-size: 18px; }
+.qrbox { background: #fff; padding: 12px; border-radius: 10px; }
+.qrbox img, .qrbox canvas { display: block; width: 180px; height: 180px; }
+@media (max-width: 560px) { .poster { grid-template-columns: 1fr; justify-items: start; } }
+
+.lock { max-width: 380px; margin: 40px auto; }
+@media (prefers-reduced-motion: no-preference) { .card, .rows { animation: in .18s ease-out; } @keyframes in { from { transform: translateY(4px); } to { transform: none; } } }
+</style>
+
+<div class="demo-bar">
+  <span>Prototipo con citas de ejemplo. Los datos se guardan solo en este dispositivo.</span>
+  <div class="switch" role="group" aria-label="Cambiar vista">
+    <button type="button" id="v-pac" aria-pressed="true">Vista paciente</button>
+    <button type="button" id="v-adm" aria-pressed="false">Vista consultorio</button>
+  </div>
+</div>
+
+<main id="app"></main>
+
+<script>
+(function () {
+  const KEY = "avisa-cita-demo-v1";
+  const CLINIC = { nombre: "Consultorio del Dr. Ramírez", lugar: "Unidad de Medicina Familiar · Consultorio 7", tel: "55 1234 5678" };
+  const PIN = "1234";
+
+  // ---------- fechas ----------
+  const pad = n => String(n).padStart(2, "0");
+  const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  const fromYmd = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+  const today = () => ymd(new Date());
+  const addDays = (s, n) => { const d = fromYmd(s); d.setDate(d.getDate() + n); return ymd(d); };
+  const longDay = s => {
+    const t = fromYmd(s).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
+  const ampm = hhmm => {
+    const [h, m] = hhmm.split(":").map(Number);
+    const suf = h < 12 ? "a. m." : "p. m.";
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return h12 + ":" + pad(m) + " " + suf;
+  };
+  const clock = iso => { const d = new Date(iso); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
+  const nowHHMM = () => { const d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
+
+  // ---------- datos ----------
+  function sample() {
+    const t = today(), m = addDays(t, 1);
+    const ago = min => new Date(Date.now() - min * 60000).toISOString();
+    const rows = [
+      [t, "08:00", "Rosa María Hernández Cruz", "43987612821", "llego", ago(130)],
+      [t, "08:20", "José Luis Martínez Pérez", "11856703347", "camino", ago(15)],
+      [t, "08:40", "María Elena López Torres", "62907514821", "pendiente", null],
+      [t, "09:00", "Francisco Javier Gómez Ruiz", "30816402955", "no_va", ago(240)],
+      [t, "09:20", "Guadalupe Sánchez Rivera", "75887109163", "camino", ago(6)],
+      [t, "09:40", "Antonio Flores Mendoza", "29846801472", "pendiente", null],
+      [t, "10:00", "Carmen Ortiz Vargas", "51896207738", "pendiente", null],
+      [t, "10:20", "Manuel Castillo Reyes", "84926305519", "pendiente", null],
+      [m, "08:00", "Teresa Morales Jiménez", "16897401204", "pendiente", null],
+      [m, "08:20", "Roberto Díaz Herrera", "92826508830", "pendiente", null]
+    ];
+    return rows.map(([fecha, hora, nombre, nss, estado, avisoEn]) => ({ id: fecha + "|" + hora + "|" + nss, fecha, hora, nombre, nss, estado, avisoEn }));
+  }
+  let mem = null;
+  function load() {
+    try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+    if (!mem) mem = { citas: sample() };
+    return mem;
+  }
+  function save(db) { mem = db; try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} }
+  function setEstado(id, estado) {
+    const db = load(); const c = db.citas.find(x => x.id === id); if (!c) return;
+    c.estado = estado; c.avisoEn = new Date().toISOString(); save(db);
+  }
+
+  const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  const app = document.getElementById("app");
+
+  // ---------- vista paciente ----------
+  let pac = { step: "inicio", q: "", d4: "", found: [], sel: null, err: "" };
+
+  function callBlock() {
+    return '<div class="call">¿Dudas? Llame al consultorio<a href="tel:' + CLINIC.tel.replace(/\s/g, "") + '">' + CLINIC.tel + '</a></div>';
+  }
+  function header() {
+    return '<header class="clinic"><h1>' + CLINIC.nombre + '</h1><p>' + CLINIC.lugar + '</p></header>';
+  }
+  const statusText = {
+    camino: "Ya avisó que viene en camino.",
+    no_va: "Ya avisó que no va a venir.",
+    llego: "Ya registraron su llegada. ¡Gracias!"
+  };
+
+  function renderPatient() {
+    let h = '<div class="patient">' + header();
+    if (pac.step === "inicio") {
+      h += '<section class="card"><h2 style="font-size:24px">Avise si va a llegar a su cita</h2>' +
+        '<p style="margin:0;font-size:19px">Así el doctor sabe si debe esperarle.</p>' +
+        '<button class="big primary" id="go-search" type="button"><span class="ico" aria-hidden="true">🔍</span>Buscar mi cita</button></section>';
+    } else if (pac.step === "buscar") {
+      h += '<form class="card" id="f-search" novalidate>' +
+        '<label class="field">Su nombre<small>Por ejemplo: María López</small>' +
+        '<input class="txt" id="q" autocomplete="name" value="' + esc(pac.q) + '"></label>' +
+        '<label class="field">Últimos 4 números de su seguro social<small>Vienen en su carnet del IMSS</small>' +
+        '<input class="txt digits" id="d4" inputmode="numeric" maxlength="4" pattern="[0-9]*" value="' + esc(pac.d4) + '"></label>' +
+        (pac.err ? '<p class="error" role="alert">' + pac.err + '</p>' : '') +
+        '<button class="big primary" type="submit"><span class="ico" aria-hidden="true">🔍</span>Buscar</button>' +
+        '<button class="big plain" type="button" id="back">Regresar</button>' +
+        '<p class="hint">Para probar: <b>María López</b> con <b>4821</b>, o <b>José Martínez</b> con <b>3347</b>.</p>' +
+        '</form>';
+    } else if (pac.step === "cita") {
+      const db = load();
+      const list = pac.found.map(id => db.citas.find(c => c.id === id)).filter(Boolean);
+      list.forEach(c => {
+        h += '<section class="card"><div class="appt"><span class="who">' + esc(c.nombre) + '</span>' +
+          '<span class="day">' + longDay(c.fecha) + '</span><span class="time">' + ampm(c.hora) + '</span></div>';
+        if (c.estado !== "pendiente") h += '<div class="status-line ' + c.estado + '">' + statusText[c.estado] + '</div>';
+        if (c.estado !== "llego") {
+          if (c.estado !== "camino") h += '<button class="big go" type="button" data-camino="' + esc(c.id) + '"><span class="ico" aria-hidden="true">🚗</span>Estoy en camino</button>';
+          if (c.estado !== "no_va") h += '<button class="big stop" type="button" data-nova="' + esc(c.id) + '"><span class="ico" aria-hidden="true">✖</span>Ya no voy</button>';
+          if (c.estado === "no_va") h += '<p style="margin:0;font-size:17px;color:var(--muted)">¿Se equivocó? Toque <b>Estoy en camino</b>.</p>';
+        }
+        h += '</section>';
+      });
+      h += '<button class="big plain" type="button" id="restart">Salir</button>';
+    } else if (pac.step === "confirmar_no") {
+      const c = load().citas.find(x => x.id === pac.sel);
+      h += '<section class="card"><h2 style="font-size:26px">¿Seguro que ya no va a venir?</h2>' +
+        '<p style="margin:0;font-size:20px">Su cita del ' + longDay(c.fecha).toLowerCase() + ' a las ' + ampm(c.hora) + ' quedará libre para otro paciente.</p>' +
+        '<button class="big stop-solid" type="button" id="yes-no">Sí, ya no voy</button>' +
+        '<button class="big plain" type="button" id="cancel-no">No, regresar</button></section>';
+    } else if (pac.step === "listo") {
+      const c = load().citas.find(x => x.id === pac.sel);
+      const camino = c.estado === "camino";
+      h += '<section class="card done"><span class="mark" aria-hidden="true">' + (camino ? "✅" : "👋") + '</span>' +
+        '<h2>Listo, el consultorio ya sabe</h2>' +
+        '<p>' + (camino ? "Avisamos que viene en camino a su cita de las " + ampm(c.hora) + "." : "Avisamos que no va a venir. Gracias por avisar.") + '</p>' +
+        '<button class="big plain" type="button" id="restart">Terminar</button></section>';
+    }
+    h += callBlock() + '</div>';
+    app.innerHTML = h;
+    wirePatient();
+  }
+
+  function wirePatient() {
+    const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener("click", fn); };
+    on("go-search", () => { pac.step = "buscar"; renderPatient(); focusFirst(); });
+    on("back", () => { pac = { step: "inicio", q: "", d4: "", found: [], sel: null, err: "" }; renderPatient(); });
+    on("restart", () => { pac = { step: "inicio", q: "", d4: "", found: [], sel: null, err: "" }; renderPatient(); });
+    on("cancel-no", () => { pac.step = "cita"; renderPatient(); });
+    on("yes-no", () => { setEstado(pac.sel, "no_va"); pac.step = "listo"; renderPatient(); });
+    app.querySelectorAll("[data-camino]").forEach(b => b.addEventListener("click", () => { pac.sel = b.dataset.camino; setEstado(pac.sel, "camino"); pac.step = "listo"; renderPatient(); }));
+    app.querySelectorAll("[data-nova]").forEach(b => b.addEventListener("click", () => { pac.sel = b.dataset.nova; pac.step = "confirmar_no"; renderPatient(); }));
+    const f = document.getElementById("f-search");
+    if (f) {
+      document.getElementById("d4").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); });
+      f.addEventListener("submit", e => {
+        e.preventDefault();
+        pac.q = document.getElementById("q").value; pac.d4 = document.getElementById("d4").value;
+        const words = norm(pac.q).split(/\s+/).filter(w => w.length >= 2);
+        if (!words.length) { pac.err = "Escriba su nombre."; return renderPatient(); }
+        if (pac.d4.length !== 4) { pac.err = "Escriba los 4 números de su seguro social."; return renderPatient(); }
+        const t = today();
+        const found = load().citas.filter(c => {
+          if (c.fecha < t || c.nss.slice(-4) !== pac.d4) return false;
+          const nameWords = norm(c.nombre).split(/\s+/);
+          return words.every(w => nameWords.some(n => n.startsWith(w)));
+        }).sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+        if (!found.length) { pac.err = "No encontramos su cita. Revise su nombre y los 4 números, o llame al consultorio."; return renderPatient(); }
+        pac.err = ""; pac.found = found.map(c => c.id); pac.step = "cita"; renderPatient();
+      });
+    }
+  }
+  function focusFirst() { const el = document.getElementById("q"); if (el) el.focus(); }
+
+  // ---------- vista consultorio ----------
+  let adm = { unlocked: false, tab: "agenda", day: today(), pasteText: "", pasteDay: today(), preview: null, msg: "" };
+  try { adm.unlocked = sessionStorage.getItem(KEY + "-pin") === "ok"; } catch (e) {}
+
+  const LABEL = { pendiente: "Sin avisar", camino: "En camino", no_va: "No va", llego: "Ya llegó" };
+
+  function renderAdmin() {
+    if (!adm.unlocked) {
+      app.innerHTML = '<form class="card lock" id="f-pin"><h2 style="font-size:24px">Entrar al consultorio</h2>' +
+        '<label class="field">PIN<input class="txt digits" id="pin" inputmode="numeric" maxlength="4" type="password" autocomplete="off"></label>' +
+        (adm.msg ? '<p class="error" role="alert">' + adm.msg + '</p>' : '') +
+        '<button class="big primary" type="submit">Entrar</button><p class="hint">PIN de prueba: <b>1234</b></p></form>';
+      document.getElementById("f-pin").addEventListener("submit", e => {
+        e.preventDefault();
+        if (document.getElementById("pin").value === PIN) { adm.unlocked = true; adm.msg = ""; try { sessionStorage.setItem(KEY + "-pin", "ok"); } catch (x) {} }
+        else adm.msg = "PIN incorrecto.";
+        renderAdmin();
+      });
+      return;
+    }
+    let h = '<div class="admin"><div class="admin-head"><div><h1>' + CLINIC.nombre + '</h1><span style="color:var(--muted)">Panel del consultorio</span></div>' +
+      '<div class="tabs" role="tablist">' +
+      ['agenda:Agenda', 'pegar:Pegar agenda', 'qr:Cartel con QR'].map(s => { const [k, l] = s.split(":"); return '<button role="tab" type="button" data-tab="' + k + '" aria-selected="' + (adm.tab === k) + '">' + l + '</button>'; }).join("") +
+      '</div></div>';
+    if (adm.tab === "agenda") h += agendaHTML();
+    else if (adm.tab === "pegar") h += pasteHTML();
+    else h += qrHTML();
+    h += '</div>';
+    app.innerHTML = h;
+    wireAdmin();
+  }
+
+  function agendaHTML() {
+    const db = load();
+    const list = db.citas.filter(c => c.fecha === adm.day).sort((a, b) => a.hora.localeCompare(b.hora));
+    const n = { camino: 0, no_va: 0, pendiente: 0, llego: 0 };
+    list.forEach(c => n[c.estado]++);
+    const isToday = adm.day === today(), now = nowHHMM();
+    let h = '<div class="toolbar"><input type="date" id="day" value="' + adm.day + '" aria-label="Día">' +
+      '<span class="daylabel">' + longDay(adm.day) + (isToday ? " · hoy" : "") + '</span></div>';
+    h += '<div class="counts">' + ["camino", "pendiente", "no_va", "llego"].map(k => '<div class="count ' + k + '"><b>' + n[k] + '</b><span>' + LABEL[k] + '</span></div>').join("") + '</div>';
+    h += '<div class="rows" aria-live="polite">';
+    if (!list.length) h += '<div class="empty">No hay citas este día. Use <b>Pegar agenda</b> para cargarlas.</div>';
+    list.forEach(c => {
+      const late = isToday && c.estado === "pendiente" && c.hora < now;
+      const cls = late ? "late" : c.estado;
+      const pill = late ? '<span class="pill late">⚠ Ya es su hora, no avisó</span>' : '<span class="pill ' + c.estado + '">' + LABEL[c.estado] + (c.avisoEn && c.estado !== "pendiente" ? " · " + clock(c.avisoEn) : "") + '</span>';
+      const btn = c.estado === "llego"
+        ? '<button class="mini" type="button" data-undo="' + esc(c.id) + '">Deshacer</button>'
+        : '<button class="mini solid" type="button" data-llego="' + esc(c.id) + '">Ya llegó</button>';
+      h += '<div class="row ' + cls + '"><span class="hr">' + c.hora + '</span>' +
+        '<div style="min-width:0"><div class="name">' + esc(c.nombre) + '</div><div class="meta">NSS ••••' + esc(c.nss.slice(-4)) + '</div></div>' +
+        '<div class="right">' + pill + btn + '</div></div>';
+    });
+    h += '</div><div class="btnrow"><button class="btn ghost" type="button" id="reset">Restaurar citas de ejemplo</button></div>';
+    return h;
+  }
+
+  // ---------- pegar agenda ----------
+  function parseAgenda(text, defDay) {
+    const out = [];
+    text.split(/\r?\n/).forEach((raw, i) => {
+      let s = raw.trim();
+      if (!s) return;
+      if (/nombre|paciente|afiliaci/i.test(s) && !/\d{4}/.test(s)) return; // encabezado
+      let fecha = defDay, hora = null, nss = null, err = [];
+      let m = s.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+      if (m) { fecha = m[1] + "-" + pad(+m[2]) + "-" + pad(+m[3]); s = s.replace(m[0], " "); }
+      else if ((m = s.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/))) {
+        const y = m[3].length === 2 ? "20" + m[3] : m[3];
+        fecha = y + "-" + pad(+m[2]) + "-" + pad(+m[1]); s = s.replace(m[0], " ");
+      }
+      if ((m = s.match(/\b(\d{1,2}):(\d{2})\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/i))) {
+        let h = +m[1]; const ap = (m[3] || "").toLowerCase().replace(/[\s.]/g, "");
+        if (ap === "pm" && h < 12) h += 12; if (ap === "am" && h === 12) h = 0;
+        hora = pad(h) + ":" + m[2]; s = s.replace(m[0], " ");
+      }
+      if ((m = s.match(/\d[\d\s-]{8,16}\d/))) {
+        const d = m[0].replace(/\D/g, "");
+        if (d.length >= 10 && d.length <= 11) { nss = d; s = s.replace(m[0], " "); }
+      }
+      const nombre = s.replace(/[\t,;|]+/g, " ").replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ' ]/g, " ").replace(/\s+/g, " ").trim()
+        .toLowerCase().replace(/(^|\s)(\S)/g, (a, b, c) => b + c.toUpperCase());
+      if (!hora) err.push("falta la hora");
+      if (!nombre) err.push("falta el nombre");
+      if (!nss) err.push("falta el NSS");
+      if (isNaN(fromYmd(fecha).getTime())) err.push("fecha inválida");
+      out.push({ linea: i + 1, fecha, hora, nombre, nss, err });
+    });
+    return out;
+  }
+
+  const SAMPLE_PASTE = "Hora\tNombre\tNSS\n08:00\tPEREZ GARCIA JUAN CARLOS\t12345678901\n08:20\tRUIZ SOTO ANA LAURA\t98765432105\n8:40 am\tVEGA LUNA PEDRO\t4567-89-0123-4\n09:00\tCRUZ MORA ELENA";
+
+  function pasteHTML() {
+    let h = '<section class="paste"><p class="help">Copie la lista de citas del sistema del IMSS o de su Excel y péguela aquí. Cada renglón necesita <b>hora</b>, <b>nombre</b> y <b>número de seguro social</b>. Si el renglón trae fecha, se usa esa; si no, se usa la fecha de abajo.</p>' +
+      '<div class="toolbar"><label style="display:flex;gap:8px;align-items:center;font-weight:600">Fecha de la agenda <input type="date" id="pday" value="' + adm.pasteDay + '"></label>' +
+      '<button class="btn ghost" type="button" id="fill-sample">Llenar con un ejemplo</button></div>' +
+      '<textarea id="ptext" spellcheck="false" placeholder="08:00   PEREZ GARCIA JUAN   12345678901">' + esc(adm.pasteText) + '</textarea>' +
+      '<div class="btnrow"><button class="btn" type="button" id="do-preview">Revisar lista</button></div>';
+    if (adm.preview) {
+      const ok = adm.preview.filter(r => !r.err.length);
+      h += '<p style="margin:0;font-weight:700">' + ok.length + ' citas listas' + (adm.preview.length - ok.length ? ' · ' + (adm.preview.length - ok.length) + ' con problemas (no se guardarán)' : '') + '</p>' +
+        '<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>NSS</th><th>Revisión</th></tr></thead><tbody>' +
+        adm.preview.map(r => '<tr class="' + (r.err.length ? "bad" : "") + '"><td class="mono">' + esc(r.fecha) + '</td><td class="mono">' + esc(r.hora || "—") + '</td><td>' + esc(r.nombre || "—") + '</td><td class="mono">' + esc(r.nss || "—") + '</td><td>' + (r.err.length ? "Renglón " + r.linea + ": " + r.err.join(", ") : "✓") + '</td></tr>').join("") +
+        '</tbody></table></div>' +
+        '<div class="btnrow"><button class="btn" type="button" id="do-save"' + (ok.length ? "" : " disabled") + '>Guardar ' + ok.length + ' citas</button></div>';
+    }
+    if (adm.msg) h += '<p class="toast" role="status">' + adm.msg + '</p>';
+    return h + '</section>';
+  }
+
+  function savePreview() {
+    const db = load();
+    const ok = adm.preview.filter(r => !r.err.length);
+    const days = new Set(ok.map(r => r.fecha));
+    const prev = new Map(db.citas.map(c => [c.id, c]));
+    db.citas = db.citas.filter(c => !days.has(c.fecha));
+    ok.forEach(r => {
+      const id = r.fecha + "|" + r.hora + "|" + r.nss;
+      const old = prev.get(id);
+      db.citas.push({ id, fecha: r.fecha, hora: r.hora, nombre: r.nombre, nss: r.nss, estado: old ? old.estado : "pendiente", avisoEn: old ? old.avisoEn : null });
+    });
+    save(db);
+    adm.msg = "Guardadas " + ok.length + " citas. Sus pacientes ya pueden buscarlas.";
+    adm.preview = null; adm.pasteText = "";
+    adm.day = [...days].sort()[0] || adm.day;
+  }
+
+  function qrHTML() {
+    return '<section class="poster"><div><h2>¿Tiene cita?<br>Avise si viene</h2>' +
+      '<ol><li>Escanee este código con la cámara de su celular.</li><li>Guárdelo para usarlo el día de su cita.</li><li>Busque su nombre y toque <b>Estoy en camino</b> o <b>Ya no voy</b>.</li></ol>' +
+      '<p style="color:var(--muted);font-size:15px">Ejemplo del cartel. En la versión real el código abre la página de sus pacientes.</p></div>' +
+      '<div class="qrbox" id="qr" aria-label="Código QR de ejemplo"></div></section>';
+  }
+
+  function wireAdmin() {
+    app.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => { adm.tab = b.dataset.tab; adm.msg = ""; renderAdmin(); }));
+    const day = document.getElementById("day");
+    if (day) day.addEventListener("change", () => { if (day.value) { adm.day = day.value; renderAdmin(); } });
+    app.querySelectorAll("[data-llego]").forEach(b => b.addEventListener("click", () => { setEstado(b.dataset.llego, "llego"); renderAdmin(); }));
+    app.querySelectorAll("[data-undo]").forEach(b => b.addEventListener("click", () => { setEstado(b.dataset.undo, "pendiente"); renderAdmin(); }));
+    const reset = document.getElementById("reset");
+    if (reset) reset.addEventListener("click", () => { save({ citas: sample() }); adm.day = today(); renderAdmin(); });
+    const pt = document.getElementById("ptext");
+    if (pt) pt.addEventListener("input", () => { adm.pasteText = pt.value; });
+    const pd = document.getElementById("pday");
+    if (pd) pd.addEventListener("change", () => { adm.pasteDay = pd.value || today(); });
+    const fs = document.getElementById("fill-sample");
+    if (fs) fs.addEventListener("click", () => { adm.pasteText = SAMPLE_PASTE; adm.preview = null; adm.msg = ""; renderAdmin(); });
+    const pv = document.getElementById("do-preview");
+    if (pv) pv.addEventListener("click", () => { adm.msg = ""; adm.preview = parseAgenda(adm.pasteText, adm.pasteDay); renderAdmin(); });
+    const sv = document.getElementById("do-save");
+    if (sv) sv.addEventListener("click", () => { savePreview(); adm.tab = "agenda"; renderAdmin(); });
+    const qr = document.getElementById("qr");
+    if (qr && window.QRCode) new QRCode(qr, { text: "https://ejemplo.mx/avisa-tu-cita", width: 360, height: 360, colorDark: "#0E1E3A", colorLight: "#FFFFFF" });
+  }
+
+  // ---------- cambio de vista ----------
+  let view = location.hash === "#consultorio" ? "adm" : "pac";
+  function render() {
+    document.getElementById("v-pac").setAttribute("aria-pressed", view === "pac");
+    document.getElementById("v-adm").setAttribute("aria-pressed", view === "adm");
+    view === "pac" ? renderPatient() : renderAdmin();
+  }
+  document.getElementById("v-pac").addEventListener("click", () => { view = "pac"; render(); });
+  document.getElementById("v-adm").addEventListener("click", () => { view = "adm"; render(); });
+  // otra pestaña abierta (paciente en una, consultorio en otra) se actualiza sola
+  window.addEventListener("storage", e => { if (e.key === KEY && view === "adm") renderAdmin(); });
+  setInterval(() => { if (view === "adm" && adm.tab === "agenda") renderAdmin(); }, 60000);
+  render();
+})();
+</script>
+
+</body>
+</html>
