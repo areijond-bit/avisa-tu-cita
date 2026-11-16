@@ -475,7 +475,8 @@
       '<span class="num">' + (i + 1) + '</span>' +
       '<select class="hsel' + (choque || !r.hora ? ' missing' : '') + '" data-hora="' + i + '" aria-label="Hora del paciente ' + (i + 1) + '">' + opts + '</select>' +
       '<div class="ecol"><input class="ein nm' + (r.nombre.trim() ? '' : ' missing') + '" data-i="' + i + '" value="' + esc(r.nombre) + '" aria-label="Nombre del paciente ' + (i + 1) + '" placeholder="Nombre y apellido">' +
-      '<div class="emeta">' + quien + (prob ? '<span class="eprob">' + prob + '</span>' : '') + repetido(r, i) + '</div></div>' +
+      '<div class="emeta">' + quien + (prob ? '<span class="eprob">' + prob + '</span>' : '') + repetido(r, i) +
+      (r.dudoso ? '<span class="eprob">Revise: la foto no se leyó clara</span>' : '') + '</div></div>' +
       '<div class="eacts"><button class="mini-link" type="button" data-split="' + i + '">Separar</button>' +
       '<button class="del" type="button" data-del="' + i + '" aria-label="Quitar paciente ' + (i + 1) + '">×</button></div></li>';
   }
@@ -564,6 +565,51 @@
     nuevas.forEach(r => { r.hora = primeraLibre(); adm.rows.push(r); });
     aviso();
   }
+  const NOMBRES_COMUNES = ("José Juan Luis Carlos Jorge Jesús Miguel Ángel Francisco Javier Antonio Alejandro Manuel Pedro Ricardo Roberto " +
+    "Fernando Daniel Eduardo Rafael Arturo Sergio Raúl Enrique Alberto Mario Martín Héctor Víctor Óscar Hugo Gerardo Andrés Pablo Ramón " +
+    "Rubén Salvador Alfredo Alfonso Ernesto Guillermo Gabriel Gustavo Ignacio Joaquín Julio César Diego David Emilio Felipe Gilberto Ismael " +
+    "Rodrigo Santiago Sebastián Tomás Vicente Agustín Armando Benjamín Cristian Leonardo Mauricio Octavio Omar Rogelio Saúl Ulises Adrián " +
+    "María Guadalupe Juana Margarita Josefina Verónica Leticia Rosa Patricia Elizabeth Alejandra Gabriela Martha Marta Teresa Ana Laura " +
+    "Silvia Claudia Adriana Yolanda Gloria Lucía Carmen Elena Irma Sandra Mónica Isabel Luz Norma Alicia Beatriz Diana Dolores Esperanza " +
+    "Graciela Lorena Araceli Angélica Antonia Cecilia Concepción Fernanda Karina Karla Mariana Natalia Rocío Sofía Susana Valeria Victoria " +
+    "Blanca Brenda Carolina Cristina Daniela Esther Eva Fabiola Isela Julia Liliana Lourdes Marisol Miriam Nancy Paola Pilar Raquel Reyna " +
+    "Rosario Sara Socorro Sonia Tania Ximena Yesenia Andrea Paula Pancha Pepe Lupe Chuy Paco Beto " +
+    "Hernández García Martínez López González Pérez Rodríguez Sánchez Ramírez Cruz Flores Gómez Morales Vázquez Reyes Jiménez Torres Díaz " +
+    "Gutiérrez Ruiz Mendoza Aguilar Ortiz Moreno Castillo Romero Álvarez Méndez Chávez Rivera Juárez Ramos Domínguez Herrera Medina Castro " +
+    "Vargas Guzmán Velázquez Muñoz Rojas Contreras Salazar Luna Ortega Guerrero Estrada Bautista Delgado Cortés Soto Santiago Silva Rosas " +
+    "Mejía Ríos Núñez Campos Alvarado Espinoza Navarro Sandoval Cervantes Zamora Valdez Carrillo Ibarra Acosta Pineda Lara Padilla Fuentes " +
+    "Ochoa Salinas Solís Trejo Cabrera Rosales Robles Ávila Montes Paredes Vega Escobar Cano Olvera Andrade Serrano Bravo Peña Molina " +
+    "Alba Alcázar Pizaña Rivas Morán Galván Garza Treviño Villarreal Leal Cantú Elizondo Salas Tamez Benavides Saldaña Montemayor Garcia " +
+    "Lopez Perez Gonzalez Rodriguez Sanchez Ramirez Gomez Vazquez Jimenez Diaz Gutierrez Martinez Hernandez").split(" ");
+  // Distancia de edición (para corregir una letra mal leída: "Cópez" → "López")
+  function distancia(a, b) {
+    if (Math.abs(a.length - b.length) > 1) return 9;
+    const m = a.length, n = b.length, d = Array.from({ length: m + 1 }, (_, i) => [i]);
+    for (let j = 1; j <= n; j++) d[0][j] = j;
+    for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[m][n];
+  }
+  // Revisa un renglón leído de la foto: corrige palabras contra nombres conocidos y dice si parece nombre
+  function revisarRenglon(texto, seguridad, conocidos) {
+    const r = rowsFromText(texto, true)[0];
+    if (!r) return null;
+    let corregido = false, conocido = false;
+    const palabras = r.nombre.split(" ").map(p => {
+      const k = norm(p);
+      const exacta = conocidos.get(k);
+      if (exacta) { conocido = true; return exacta; }
+      if (k.length >= 4) {
+        for (const [ck, cv] of conocidos) if (distancia(k, ck) === 1) { conocido = corregido = true; return cv; }
+      }
+      return p;
+    });
+    const puntos = seguridad + (conocido ? 40 : 0);
+    if (puntos < 45) return null;
+    r.nombre = palabras.join(" ");
+    r.dudoso = seguridad < 60 || corregido;
+    return r;
+  }
   const LETRAS = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZabcdefghijklmnñopqrstuvwxyzÁÉÍÓÚÜáéíóúü0123456789 .,)-'";
   async function leerFoto(file) {
     if (!window.Tesseract) { adm.msg = "No se pudo cargar el lector de fotos. Revise el internet."; return renderAdmin(); }
@@ -571,6 +617,7 @@
     adm.foto = URL.createObjectURL(file);
     adm.ocr = 0.02; adm.msg = ""; renderAdmin();
     try {
+      if (!adm.pacientes) { try { adm.pacientes = (await staff("pacientes_lista")).pacientes; } catch (e) {} }
       const img = await prepImage(file);
       const worker = await Tesseract.createWorker("spa", 1, {
         logger: m => { if (m.status === "recognizing text") { adm.ocr = Math.max(0.05, m.progress); const s = app.querySelector(".prog span"); if (s) s.style.width = Math.round(adm.ocr * 100) + "%"; } }
@@ -579,11 +626,14 @@
       await worker.setParameters({ tessedit_pageseg_mode: "6", tessedit_char_whitelist: LETRAS, preserve_interword_spaces: "1" });
       const { data } = await worker.recognize(img);
       await worker.terminate();
-      // Se descartan los renglones que se leyeron con poca seguridad
-      const texto = Array.isArray(data.lines) && data.lines.length
-        ? data.lines.filter(l => l.confidence >= 50).map(l => l.text).join("\n")
-        : data.text;
-      const rows = rowsFromText(texto, true);
+      // Cada renglón se queda si se leyó con seguridad o si trae un nombre o apellido conocido
+      const conocidos = new Map();
+      NOMBRES_COMUNES.concat(...(adm.pacientes || []).map(p => p.nombre.split(" ")))
+        .forEach(w => { if (w.length >= 3 && !conocidos.has(norm(w))) conocidos.set(norm(w), w); });
+      const lineas = Array.isArray(data.lines) && data.lines.length
+        ? data.lines.map(l => ({ texto: l.text, seguridad: l.confidence }))
+        : data.text.split("\n").map(t => ({ texto: t, seguridad: 60 }));
+      const rows = lineas.map(l => revisarRenglon(l.texto, l.seguridad, conocidos)).filter(Boolean);
       if (rows.length) agregarFilas(rows);
       else adm.msg = "No se pudo leer ningún nombre. Tome la foto de frente, con buena luz y que la hoja llene la foto. Con letra a mano funciona mejor si los nombres van en letra de molde, uno por renglón.";
     } catch (e) { adm.msg = "No se pudo leer la foto. Intente de nuevo."; }
@@ -750,7 +800,7 @@
   // ---------- eventos del panel ----------
   function wireRows() {
     app.querySelectorAll(".ein.nm").forEach(inp => inp.addEventListener("input", () => {
-      const r = adm.rows[+inp.dataset.i]; r.nombre = inp.value; r.pid = undefined;
+      const r = adm.rows[+inp.dataset.i]; r.nombre = inp.value; r.pid = undefined; r.dudoso = false;
       clearTimeout(wireRows.t); wireRows.t = setTimeout(redrawRows, 500);
     }));
     app.querySelectorAll("[data-hora]").forEach(s => s.addEventListener("change", () => { adm.rows[+s.dataset.hora].hora = s.value; redrawRows(); }));
