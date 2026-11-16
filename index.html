@@ -307,6 +307,9 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
 .dp-pop { position: absolute; top: calc(100% + 8px); z-index: 30; width: min(330px, calc(100vw - 32px)); background: var(--white); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 16px 40px rgba(15, 27, 45, 0.18); padding: 16px; }
 .dp-right .dp-pop { right: 0; }
 .dp-left .dp-pop { left: 0; }
+@media (max-width: 760px) {
+  .dp-pop, .dp-right .dp-pop, .dp-left .dp-pop { position: fixed; left: 50%; right: auto; top: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 0 100vmax rgba(15, 27, 45, 0.35), 0 16px 40px rgba(15, 27, 45, 0.25); }
+}
 .dp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .dp-head b { font-size: 19px; }
 .dp-nav { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--blue-tint); color: var(--blue); font-size: 22px; font-weight: 800; line-height: 1; }
