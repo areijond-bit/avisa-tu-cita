@@ -576,7 +576,7 @@ ol.edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line)
   async function loadDay() {
     try { adm.list = (await staff("agenda_dia", { p_fecha: adm.day })).citas; adm.loadErr = ""; }
     catch (e) { if (e.message !== "clave") adm.loadErr = "No se pudo cargar la agenda. Revise el internet."; }
-    const ocupado = adm.editTel || adm.editName || adm.addSlot || adm.menu || drag || dp.open || document.activeElement?.matches?.("input");
+    const ocupado = adm.editTel || adm.editName || adm.addSlot || adm.menu || drag || dp.open;
     if (view === "adm" && adm.unlocked && adm.tab === "agenda" && !ocupado) renderAdmin();
   }
   async function loadPacientes() {
