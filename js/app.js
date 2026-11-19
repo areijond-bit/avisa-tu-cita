@@ -495,7 +495,7 @@
     const choquesN = [...by.values()].filter(v => v.length > 1).length;
     const msgs = [];
     if (n > max) msgs.push('Hay <b>' + n + '</b> nombres y el horario es de <b>' + max + '</b>.');
-    else if (n < max) msgs.push('Hay <b>' + n + '</b> nombres. Faltan <b>' + (max - n) + '</b> para llenar los ' + max + ' lugares.');
+    else if (n < max) msgs.push('Hay <b>' + n + '</b> ' + (n === 1 ? 'nombre' : 'nombres') + '. Faltan <b>' + (max - n) + '</b> para llenar los ' + max + ' lugares.');
     if (choquesN) msgs.push('<b class="red">' + choquesN + (choquesN === 1 ? ' hora tiene' : ' horas tienen') + ' dos pacientes.</b>');
     if (problemas) msgs.push(problemas + (problemas === 1 ? ' renglón por revisar.' : ' renglones por revisar.'));
     if (!msgs.length) return '<div class="notice ok">' + ic("check") + '<span><b>' + n + ' pacientes</b> · lista completa.</span></div>';
