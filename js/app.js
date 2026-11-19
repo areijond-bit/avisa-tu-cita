@@ -243,7 +243,7 @@
 
   // ---------- Agenda + WhatsApp ----------
   const mensaje = c => "Hola, " + c.nombre + ". Le recordamos su cita con el " + CLINIC.doctor + " (" + CLINIC.titulo + ") el " +
-    longDay(c.fecha).toLowerCase() + " a las " + ampm(c.hora) + ".\n\n¿Va a venir? Toque aquí para confirmar o cancelar:\n" + SITE_URL + "?c=" + c.token;
+    longDay(c.fecha).toLowerCase() + ".\n\n¿Va a venir? Toque aquí para confirmar o cancelar:\n" + SITE_URL + "?c=" + c.token;
   // En celular abre la app de WhatsApp; en computadora, WhatsApp Web siempre en la misma pestaña
   const esCelular = window.matchMedia("(pointer: coarse)").matches;
   const waLink = c => esCelular
