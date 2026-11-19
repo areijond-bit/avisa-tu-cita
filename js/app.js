@@ -418,20 +418,29 @@
   }
 
   function cargarHTML() {
-    let h = '<section class="stack paste"><div class="bar"><div><h2>Cargar citas</h2><span class="sub">Tome una foto de la lista y revise los nombres y las horas.</span></div></div>' +
+    let h = '<section class="stack paste"><div class="bar"><div><h2>Cargar citas</h2><span class="sub">Escanee la hoja con la cámara del celular y revise los nombres y las horas.</span></div></div>' +
       '<div class="row-btns"><span style="font-weight:700;font-size:17px">Fecha de las citas</span>' + datePicker("pday", adm.pasteDay, "left") + '</div>';
     if (adm.ocr !== null) {
       h += '<div class="ocr"><b>Leyendo la lista…</b> <span class="sub">Puede tardar unos segundos.</span><div class="prog"><span style="width:' + Math.round(adm.ocr * 100) + '%"></span></div></div>';
     } else {
-      h += '<div class="pick2"><label class="btn-xl btn-blue photo" for="foto">' + ic("camera") + (adm.rows ? 'Agregar otra foto' : 'Tomar o subir foto') + '</label>' +
-        '<button class="btn-xl btn-plain" type="button" id="toggle-paste">' + ic("paste") + (adm.showPaste ? 'Ocultar pegar' : 'Pegar lista') + '</button></div>' +
+      h += '<div class="pick2"><button class="btn-xl btn-blue" type="button" id="modo-escanear">' + ic("camera") + 'Escanear la hoja</button>' +
+        '<button class="btn-xl btn-plain" type="button" id="modo-pegar">' + ic("paste") + 'Pegar lista</button></div>' +
         '<input id="foto" type="file" accept="image/*" hidden>' +
-        (adm.rows ? '' : '<button class="link" type="button" id="empty-list">O escribir la lista a mano</button>');
+        '<div class="row-btns">' + (adm.rows ? '' : '<button class="link" type="button" id="empty-list">Escribir la lista a mano</button>') +
+        '<label class="link" for="foto">Usar el lector de la página (solo letra impresa)</label></div>';
       if (adm.showPaste) {
-        h += '<div class="pastebox"><label for="ptext"><b>Pegue aquí la lista</b> <span class="sub">— texto copiado de Excel, WhatsApp o el sistema, o una imagen (captura de pantalla). En el celular: mantenga el dedo aquí y toque <b>Pegar</b>.</span></label>' +
-          '<textarea id="ptext" spellcheck="false" placeholder="PEREZ GARCIA JUAN&#10;RUIZ SOTO ANA LAURA&#10;…">' + esc(adm.pasteText) + '</textarea>' +
-          '<div class="row-btns"><button class="mbtn" type="button" id="do-preview">' + (adm.rows ? 'Agregar a la lista' : 'Leer lista') + '</button>' +
-          '<span class="pcount" id="pcount" aria-live="polite"></span></div>' +
+        const escanear = adm.modo === "escanear";
+        h += '<div class="pastebox">' + (escanear
+          ? '<b>Escanear con la cámara del celular</b><ol class="pasos">' +
+            '<li>Toque una vez el <b>recuadro blanco</b> de abajo.</li>' +
+            '<li>Tóquelo otra vez y elija <b>Escanear texto</b> (el ícono de cámara con renglones). En iPhone, si no se ve, toque la flecha <b>›</b> del menú.</li>' +
+            '<li>Apunte a la hoja. Cuando los nombres se marquen en amarillo, toque <b>Insertar</b>.</li>' +
+            '<li>Toque <b>Agregar a la lista</b>.</li></ol>' +
+            '<p class="sub">¿La foto ya está en la galería? Ábrala en <b>Fotos</b>, mantenga el dedo sobre un nombre, toque <b>Seleccionar todo</b> y <b>Copiar</b>, y péguela aquí.</p>'
+          : '<label for="ptext"><b>Pegue aquí la lista</b> <span class="sub">— texto copiado de Excel, WhatsApp o el sistema, o una captura de pantalla. En el celular: mantenga el dedo aquí y toque <b>Pegar</b>.</span></label>') +
+          '<textarea id="ptext" spellcheck="false" autocapitalize="words" aria-label="Lista de pacientes" placeholder="' + (escanear ? 'Toque aquí y luego «Escanear texto»' : 'PEREZ GARCIA JUAN&#10;RUIZ SOTO ANA LAURA&#10;…') + '">' + esc(adm.pasteText) + '</textarea>' +
+          '<div class="row-btns"><button class="mbtn big-add" type="button" id="do-preview">' + ic("check") + 'Agregar a la lista</button>' +
+          '<span class="pcount" id="pcount" aria-live="polite"></span><button class="link" type="button" id="close-paste">Cancelar</button></div>' +
           '<span class="sub">Un nombre por renglón. También puede separarlos con comas.</span></div>';
       }
     }
@@ -948,8 +957,13 @@
     if (pd) pd.addEventListener("change", () => { adm.pasteDay = pd.value || today(); });
     const foto = $("foto");
     if (foto) foto.addEventListener("change", () => { const f = foto.files && foto.files[0]; if (f) leerFoto(f); });
-    on("toggle-paste", () => { adm.showPaste = !adm.showPaste; renderAdmin(); });
-    on("empty-list", () => { adm.rows = [{ nombre: "", hora: SLOTS[0], pid: undefined }]; renderAdmin(); const el = app.querySelector(".ein.nm"); if (el) el.focus(); });
+    const abrirCaja = modo => () => {
+      adm.showPaste = true; adm.modo = modo; adm.msg = ""; renderAdmin();
+      const t = $("ptext"); if (t) { t.focus(); t.scrollIntoView({ block: "center" }); }
+    };
+    on("modo-escanear", abrirCaja("escanear"));
+    on("modo-pegar", abrirCaja("pegar"));
+    on("close-paste", () => { adm.showPaste = false; adm.pasteText = ""; renderAdmin(); });
     const pt = $("ptext");
     const contar = () => { const n = rowsFromText(adm.pasteText).length, el = $("pcount"); if (el) el.textContent = n ? "Se detectaron " + n + (n === 1 ? " nombre" : " nombres") : ""; };
     if (pt) { pt.addEventListener("input", () => { adm.pasteText = pt.value; contar(); }); contar(); }
